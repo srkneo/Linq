@@ -607,10 +607,185 @@ namespace LinqEfPractice.ConsoleApp
                               .ToList()
                               .GroupBy(g => g.CustomerId)
                               .SelectMany(g => g
-                                   .OrderBy(o => o.TotalBill)
+                                   .OrderByDescending(o => o.TotalBill)
+                                   .ThenByDescending(o => o.OrderDate)
+                                   .Take(1)
+                                   .Select(o => new
+                                   {
+                                       CustomerId = o.CustomerId,
+                                       OrderId = o.OrderId,
+                                       OrderDate = o.OrderDate,
+                                       TotalBill = o.TotalBill
+                                   }))
+                              .OrderByDescending(x => x.TotalBill)
+                              .ThenBy(x => x.CustomerId)
+                              .ToList();
 
-                              
+            Console.WriteLine("\nScenario 17 Results:");
+            Console.WriteLine("CustomerId | OrderId | OrderDate   | TotalBill");
+            Console.WriteLine("-----------|---------|-------------|----------");
+            foreach (var r in results)
+            {
+                Console.WriteLine($"{r.CustomerId,-10} | {r.OrderId,-7} | {r.OrderDate:yyyy-MM-dd} | {r.TotalBill,9:0.00}");
+            }
+
+
         }
+
+        /// <summary>
+        /// Scenario 18 (Orders — first order per day):
+        /// From the Orders table:
+        /// For each calendar day (OrderDate.Date), return the EARLIEST order of that day.
+        /// Each row should include:
+        /// - Date
+        /// - OrderId
+        /// - CustomerId
+        /// - OrderDate
+        /// - Status
+        /// Sort final results by Date ascending, then OrderId ascending.
+        /// </summary>
+        public void Scenario18()
+        {
+            // TODO: Write your LINQ query here
+            var result = _db.Orders.AsNoTracking()
+                            .ToList()
+                            .GroupBy(o => o.OrderDate.Date)
+                            .SelectMany(g => g
+                            .OrderBy(o => o.OrderDate)
+                            .Take(1)
+                            .Select(o => new
+                            {
+                                Date = o.OrderDate.Date,
+                                OrderId = o.OrderId,
+                                CustomerId = o.CustomerId,
+                                OrderDate = o.OrderDate,
+                                Status = o.Status
+                            }))
+                            .OrderBy(o => o.Date)
+                            .ThenBy(o => o.OrderId)
+                            .ToList();
+
+            Console.WriteLine("\nScenario 18 Results:");
+            Console.WriteLine("Date        | OrderId | CustomerId | OrderDate   | Status");
+            Console.WriteLine("------------|---------|------------|-------------|---------");
+
+            foreach (var r in result)
+            {
+                Console.WriteLine($"{r.Date:yyyy-MM-dd} | {r.OrderId,-7} | {r.CustomerId,-10} | {r.OrderDate:yyyy-MM-dd HH:mm} | {r.Status}");
+            }
+
+
+        }
+
+        /// <summary>
+        /// Scenario 19 (Orders — latest per status):
+        /// From the Orders table:
+        /// For each Status, return the MOST RECENT order (max OrderDate).
+        /// Each row should include:
+        /// - Status
+        /// - OrderId
+        /// - CustomerId
+        /// - OrderDate
+        /// Sort final results by Status ascending.
+        /// </summary>
+        public void Scenario19()
+        {
+            // TODO: Write your LINQ query here
+
+            var result = _db.Orders.AsNoTracking()
+                            .ToList()
+                            .GroupBy(o => o.Status)
+                            .SelectMany(g => g
+                                .OrderByDescending(o => o.OrderDate)
+                                .ThenByDescending(o => o.OrderId)
+                                .Take(1)
+                                .Select(o => new {
+                                    Status = o.Status,
+                                    OrderId = o.OrderId,
+                                    CustomerId = o.CustomerId,
+                                    OrderDate = o.OrderDate
+                                }))
+                            .OrderBy(o => o.Status)
+                            .ToList();
+
+            Console.WriteLine("\nScenario 19 Results:");
+            Console.WriteLine("Status     | OrderId | CustomerId | OrderDate");
+            Console.WriteLine("-----------|---------|------------|-------------");
+            foreach (var r in result)
+            {
+                Console.WriteLine($"{r.Status,-10} | {r.OrderId,-7} | {r.CustomerId,-10} | {r.OrderDate:yyyy-MM-dd HH:mm}");
+            }
+
+        }
+
+        /// <summary>
+        /// Scenario 20 (Orders — customer cohort summary + pick representative order):
+        /// Using only the Orders table:
+        /// 1) Consider orders on/after 2024-01-01.
+        /// 2) Group by CustomerId and compute, per customer:
+        ///    - OrderCount
+        ///    - FirstOrderDate (min)
+        ///    - LastOrderDate  (max)
+        ///    - AvgBill        (average of TotalBill)
+        ///    - MaxBill        (maximum TotalBill)
+        ///    - ActiveDays     ((LastOrderDate - FirstOrderDate).TotalDays)
+        /// 3) Keep only customers where:
+        ///    - OrderCount >= 2
+        ///    - ActiveDays  >= 30
+        /// 4) For each remaining customer, return the SINGLE order that has the MaxBill
+        ///    (if there are ties, pick the most recent OrderDate).
+        /// 5) Final output columns:
+        ///    - CustomerId, OrderId, OrderDate, TotalBill, OrderCount, FirstOrderDate, LastOrderDate, AvgBill, MaxBill, ActiveDays
+        /// 6) Sort by TotalBill descending, then CustomerId ascending.
+        /// </summary>
+        public void Scenario20()
+        {
+            // TODO: Write your LINQ query here
+
+            var start = new DateTime(2024, 1, 1);
+
+            // 1–2) Filter + group + aggregates (keep CustomerId)
+            var grouped = _db.Orders
+                .AsNoTracking()
+                .Where(o => o.OrderDate >= start)
+                .GroupBy(o => o.CustomerId)
+                .Select(g => new
+                {
+                    CustomerId = g.Key,
+                    OrderCount = g.Count(),
+                    FirstOrderDate = g.Min(x => x.OrderDate),
+                    LastOrderDate = g.Max(x => x.OrderDate),
+                    AvgBill = g.Average(x => x.TotalBill),
+                    MaxBill = g.Max(x => x.TotalBill),
+                    Orders = g
+
+                })
+                .ToList();
+
+
+            // 3) Add ActiveDays and apply HAVING
+
+            var filtered = grouped
+                            .Select(x => new { 
+                            
+                                x.CustomerId,
+                                x.OrderCount,
+                                x.FirstOrderDate,
+                                x.LastOrderDate,
+                                x.AvgBill,
+                                x.MaxBill,
+                                ActiveDays = (x.LastOrderDate - x.FirstOrderDate).TotalDays,
+                                x.Orders
+                            })
+                            .Where(x => x.OrderCount >= 2 && x.ActiveDays >= 30)
+                            .ToList();
+
+            // 4) For each remaining customer, pick the SINGLE order with MaxBill (tie-break: latest OrderDate)
+
+
+        }
+
+
 
     }
 }

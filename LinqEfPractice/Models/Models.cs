@@ -61,6 +61,8 @@ namespace LinqEfPractice.Models
         public DateTime OrderDate { get; set; }
         public string Status { get; set; } = "";
 
+        public decimal TotalBill { get; set; }    // 👈 add this
+
         public Customer? Customer { get; set; }
         public ICollection<OrderItem>? Items { get; set; }
     }

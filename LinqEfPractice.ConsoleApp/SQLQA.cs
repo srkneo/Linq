@@ -38,11 +38,11 @@ namespace LinqEfPractice.ConsoleApp
         public List<ProductRow> Scenario1()
         {
             const string sql = @"
-        SELECT p.ProductId, p.Name, p.Price
-        FROM Products p
-        JOIN Categories c ON c.CategoryId = p.CategoryId
-        WHERE c.Name = @cat AND p.Price < @price
-        ORDER BY p.Price ASC, p.Name ASC;";
+                SELECT p.ProductId, p.Name, p.Price
+                FROM Products p
+                JOIN Categories c ON c.CategoryId = p.CategoryId
+                WHERE c.Name = @cat AND p.Price < @price
+                ORDER BY p.Price ASC, p.Name ASC;";
 
             var results = ExecQuery(sql,
                 cmd =>
@@ -78,15 +78,15 @@ namespace LinqEfPractice.ConsoleApp
         // Scenario 3: per department aggregates
         public List<DeptAggRow> Scenario3()
         {
-            const string sql = @"
-SELECT d.Name AS DepartmentName,
-       COUNT(e.EmployeeId) AS TotalEmployees,
-       AVG(e.Salary) AS AverageSalary,
-       MAX(e.Salary) AS MaxSalary
-FROM Departments d
-LEFT JOIN Employees e ON e.DepartmentId = d.DepartmentId
-GROUP BY d.Name
-ORDER BY d.Name;";
+                        const string sql = @"
+            SELECT d.Name AS DepartmentName,
+                   COUNT(e.EmployeeId) AS TotalEmployees,
+                   AVG(e.Salary) AS AverageSalary,
+                   MAX(e.Salary) AS MaxSalary
+            FROM Departments d
+            LEFT JOIN Employees e ON e.DepartmentId = d.DepartmentId
+            GROUP BY d.Name
+            ORDER BY d.Name;";
             return ExecQuery(sql, null, r => new DeptAggRow
             {
                 DepartmentName = r.IsDBNull(0) ? "" : r.GetString(0),
@@ -99,14 +99,14 @@ ORDER BY d.Name;";
         // Scenario 9: Orders grouped by status
         public List<OrderStatusAggRow> Scenario9()
         {
-            const string sql = @"
-SELECT o.Status,
-       COUNT(*) AS TotalOrders,
-       MIN(o.OrderDate) AS EarliestOrderDate,
-       MAX(o.OrderDate) AS LatestOrderDate
-FROM Orders o
-GROUP BY o.Status
-ORDER BY TotalOrders DESC, o.Status ASC;";
+                        const string sql = @"
+            SELECT o.Status,
+                   COUNT(*) AS TotalOrders,
+                   MIN(o.OrderDate) AS EarliestOrderDate,
+                   MAX(o.OrderDate) AS LatestOrderDate
+            FROM Orders o
+            GROUP BY o.Status
+            ORDER BY TotalOrders DESC, o.Status ASC;";
             return ExecQuery(sql, null, r => new OrderStatusAggRow
             {
                 Status = r.GetString(0),
@@ -120,15 +120,15 @@ ORDER BY TotalOrders DESC, o.Status ASC;";
         public List<CustomerOrdersAggRow> Scenario10()
         {
             const string sql = @"
-SELECT o.CustomerId,
-       COUNT(*) AS TotalOrders,
-       MIN(o.OrderDate) AS FirstOrderDate,
-       MAX(o.OrderDate) AS LastOrderDate
-FROM Orders o
-WHERE o.OrderDate >= @fromDate
-GROUP BY o.CustomerId
-HAVING COUNT(*) >= 2
-ORDER BY LastOrderDate DESC, o.CustomerId ASC;";
+            SELECT o.CustomerId,
+                   COUNT(*) AS TotalOrders,
+                   MIN(o.OrderDate) AS FirstOrderDate,
+                   MAX(o.OrderDate) AS LastOrderDate
+            FROM Orders o
+            WHERE o.OrderDate >= @fromDate
+            GROUP BY o.CustomerId
+            HAVING COUNT(*) >= 2
+            ORDER BY LastOrderDate DESC, o.CustomerId ASC;";
             return ExecQuery(sql,
                 cmd => {
                     var p = cmd.CreateParameter(); p.ParameterName = "@fromDate"; p.Value = new DateTime(2025, 1, 1); cmd.Parameters.Add(p);

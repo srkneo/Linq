@@ -22,10 +22,14 @@ var root = JsonDataLoader.LoadJson<RootObject>("sampleData.json");
 db.SaveChanges();
 
 // Seed EF from JSON
+db.Database.EnsureDeleted();
+db.Database.EnsureCreated();
+db.EnsureSeededFromJson();
+
 db.EnsureSeededFromJson();
 
 var answers = new Answers(db);
-answers.Scenario16();
+answers.Scenario19();
 
 // --- SQLite context for RAW SQL scenarios ---
 var sqlitePath = Path.Combine(AppContext.BaseDirectory, "PracticeSql.db");
