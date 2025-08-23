@@ -95,20 +95,20 @@ namespace LinqEfPractice.ConsoleApp
         {
             // TODO: Write your LINQ query here
 
-           var result = _db.Employees.AsNoTracking()
-                .GroupBy(e => e.DepartmentId)
-                .Select(g => new
-                {
-                    DepartmentName = _db.Departments
-                    .Where(d => d.DepartmentId == g.Key)
-                    .Select(d => d.Name).FirstOrDefault(),
+            var result = _db.Employees.AsNoTracking()
+                 .GroupBy(e => e.DepartmentId)
+                 .Select(g => new
+                 {
+                     DepartmentName = _db.Departments
+                     .Where(d => d.DepartmentId == g.Key)
+                     .Select(d => d.Name).FirstOrDefault(),
 
-                    TotalEmployees = g.Count(),
-                    AverageSalary = g.Average(e => e.Salary),
-                    MaxSalary = g.Max(e => e.Salary)
-                })
-                .OrderBy(r => r.DepartmentName)
-                .ToList();
+                     TotalEmployees = g.Count(),
+                     AverageSalary = g.Average(e => e.Salary),
+                     MaxSalary = g.Max(e => e.Salary)
+                 })
+                 .OrderBy(r => r.DepartmentName)
+                 .ToList();
 
             Console.WriteLine("\nScenario 3 Results:");
             foreach (var emp in result)
@@ -128,17 +128,17 @@ namespace LinqEfPractice.ConsoleApp
         public void Scenario4()
         {
             // TODO: Write your LINQ query here
-          var result =  _db.Products
-                .AsNoTracking()
-                .Where(p => p.Price > 1000)
-                .Select(p => new
-                {
-                    ProductId = p.ProductId,
-                    Name = p.Name,
-                    Price = p.Price
-                })
-                .OrderByDescending(p => p.Price)
-                .ToList();
+            var result = _db.Products
+                  .AsNoTracking()
+                  .Where(p => p.Price > 1000)
+                  .Select(p => new
+                  {
+                      ProductId = p.ProductId,
+                      Name = p.Name,
+                      Price = p.Price
+                  })
+                  .OrderByDescending(p => p.Price)
+                  .ToList();
 
 
             Console.WriteLine("\nScenario 4 Results:");
@@ -159,17 +159,17 @@ namespace LinqEfPractice.ConsoleApp
         public void Scenario5()
         {
             // TODO: Write your LINQ query here
-           var result = _db.Customers
-                .AsNoTracking()
-                .Where(c => c.Country.Equals("India", StringComparison.OrdinalIgnoreCase))
-                .OrderBy(c => c.Name)
-                .Select(c => new
-                {
-                    CustomerId = c.CustomerId,
-                    Name = c.Name,
-                    Country = c.Country
-                })
-                .ToList();
+            var result = _db.Customers
+                 .AsNoTracking()
+                 .Where(c => c.Country.Equals("India", StringComparison.OrdinalIgnoreCase))
+                 .OrderBy(c => c.Name)
+                 .Select(c => new
+                 {
+                     CustomerId = c.CustomerId,
+                     Name = c.Name,
+                     Country = c.Country
+                 })
+                 .ToList();
 
             Console.WriteLine("\nScenario 5 Results:");
             foreach (var cust in result)
@@ -189,16 +189,17 @@ namespace LinqEfPractice.ConsoleApp
         public void Scenario6()
         {
             // TODO: Write your LINQ query here
-           var result =  _db.Employees
-                .AsNoTracking()
-                .Where(e=> e.IsActive == false)
-                .OrderBy( e => e.FullName)
-                .Select(e => new {
-                    EmployeeID= e.EmployeeId,
-                    FullName = e.FullName,
-                    IsActive = e.IsActive
-                })
-                .ToList();
+            var result = _db.Employees
+                 .AsNoTracking()
+                 .Where(e => e.IsActive == false)
+                 .OrderBy(e => e.FullName)
+                 .Select(e => new
+                 {
+                     EmployeeID = e.EmployeeId,
+                     FullName = e.FullName,
+                     IsActive = e.IsActive
+                 })
+                 .ToList();
 
             Console.WriteLine("\nScenario 6 Results:");
             foreach (var res in result)
@@ -248,15 +249,15 @@ namespace LinqEfPractice.ConsoleApp
         public void Scenario8()
         {
             // TODO: Write your LINQ query here
-          var result =  _db.Orders.AsNoTracking()
-                .Where(o => o.OrderDate > new DateTime(2025, 1, 1))
-                .OrderBy(o => o.OrderDate)
-                .Select(o => new
-                {
-                    OrderId = o.OrderId,
-                    CustomerId = o.CustomerId,
-                    OrderDate = o.OrderDate
-                }).ToList();
+            var result = _db.Orders.AsNoTracking()
+                  .Where(o => o.OrderDate > new DateTime(2025, 1, 1))
+                  .OrderBy(o => o.OrderDate)
+                  .Select(o => new
+                  {
+                      OrderId = o.OrderId,
+                      CustomerId = o.CustomerId,
+                      OrderDate = o.OrderDate
+                  }).ToList();
 
             Console.WriteLine("\nScenario 8 Results:");
             foreach (var res in result)
@@ -359,11 +360,257 @@ namespace LinqEfPractice.ConsoleApp
         public void Scenario11()
         {
             // TODO: Write your LINQ query here
-            
-                         
+            var result = _db.Employees.AsNoTracking()
+                            .Where(e => e.JoinDate >= new DateTime(2022, 1, 1))
+                            .GroupBy(g => g.JoinDate.Year)
+
+                            .Select(g => new
+                            {
+
+                                Year = g.Key,
+                                TotalEmployees = g.Count(),
+                                MaxSalary = g.Max(e => e.Salary)
+                            })
+                            .Where(g => g.TotalEmployees >= 2)
+                            .OrderBy(g => g.Year)
+                            .ToList();
+
+            Console.WriteLine("\nScenario 11 Results:");
+            foreach (var res in result)
+            {
+                Console.WriteLine($"{res.Year} - {res.TotalEmployees}  -  {res.MaxSalary}");
+
+            }
+        }
+
+        /// <summary>
+        /// Scenario 12 (Employees — conditional aggregates):
+        /// For each JoinYear (e.JoinDate.Year), return:
+        /// - Year
+        /// - ActiveCount (employees with IsActive == true)
+        /// - InactiveCount (employees with IsActive == false)
+        //  - AvgSalaryActive (average salary of active employees)
+        //  - MaxSalaryInactive (max salary among inactive employees; null if none)
+        /// Keep only years where BOTH ActiveCount >= 1 AND InactiveCount >= 1.
+        /// Sort by Year ascending.
+        /// </summary>
+        public void Scenario12()
+        {
+            // TODO: Write your LINQ query here
+
+            var result = _db.Employees.AsNoTracking()
+                            .GroupBy(g => g.JoinDate.Year)
+                            .Select(g => new
+                            {
+                                Year = g.Key,
+                                ActiveCount = g.Count(x => x.IsActive),
+                                InactiveCount = g.Count(x => !x.IsActive),
+                                AvgSalaryActive = g.Where(x => x.IsActive).Any() ? g.Where(x => x.IsActive).Average(x => x.Salary) : (decimal?)null,
+                                MaxSalaryInactive = g.Where(x => !x.IsActive).Any() ?
+                                                       g.Where(x => !x.IsActive).Max(x => x.Salary) : (decimal?)null,
+                            })
+                            .Where(g => g.ActiveCount >= 1 && g.InactiveCount >= 1)
+                            .OrderBy(g => g.Year)
+                            .ToList();
+
+            Console.WriteLine("\nScenario 12 Results:");
+            foreach (var res in result)
+            {
+                Console.WriteLine($"{res.Year} - {res.ActiveCount}  -  {res.InactiveCount} - {res.AvgSalaryActive}  -  {res.MaxSalaryInactive}");
+
+            }
+        }
+
+        /// <summary>
+        /// Scenario 13 (Products — price analytics):
+        /// Using only the Products table:
+        /// 1) Group products by CategoryId.
+        /// 2) For each group, return:
+        ///    - CategoryId
+        ///    - ProductCount
+        ///    - MinPrice
+        ///    - MaxPrice
+        ///    - AvgPrice
+        /// 3) Keep only categories where ProductCount >= 2.
+        /// 4) Sort by AvgPrice descending.
+        /// </summary>
+        public void Scenario13()
+        {
+            // TODO: Write your LINQ query here
+            var result = _db.Products.AsNoTracking()
+                            .GroupBy(g => g.CategoryId)
+                            .Select(g => new
+                            {
+                                CategoryId = g.Key,
+                                ProductCount = g.Count(),
+                                MinPrice = g.Min(x => x.Price),
+                                MaxPrice = g.Max(x => x.Price),
+                                AvgPrice = g.Average(x => x.Price)
+                            })
+                            .Where(x => x.ProductCount >= 2)
+                            .OrderByDescending(g => g.AvgPrice)
+                            .ToList();
+
+            Console.WriteLine("\nScenario 13 Results:");
+            foreach (var res in result)
+            {
+                Console.WriteLine($"{res.CategoryId} - {res.ProductCount}  -  {res.MinPrice} - {res.MaxPrice}  -  {res.AvgPrice}");
+
+            }
+        }
+
+        /// <summary>
+        /// Scenario 14 (Products — Top N per group, single table):
+        /// From the Products table only:
+        /// For each CategoryId, return the TOP 2 most expensive products in that category.
+        /// Each result row should include:
+        /// - CategoryId
+        /// - ProductId
+        /// - Name
+        /// - Price
+        /// Sort products within each category by Price descending, then Name ascending.
+        /// Finally, sort the overall output by CategoryId ascending, then Price descending.
+        /// </summary>
+        public void Scenario14()
+        {
+            // TODO: Write your LINQ query here
+            var result = _db.Products
+                 .AsNoTracking()
+                 .ToList() // materialize -> LINQ to Objects from here
+                 .GroupBy(p => p.CategoryId)
+                 .SelectMany(g => g
+                     .OrderByDescending(p => p.Price)
+                     .ThenBy(p => p.Name)
+                     .Take(2)
+                     .Select(p => new
+                     {
+                         CategoryId = g.Key,
+                         p.ProductId,
+                         p.Name,
+                         p.Price
+                     }))
+                 .OrderBy(x => x.CategoryId)
+                 .ThenByDescending(x => x.Price)
+                 .ThenBy(x => x.Name)
+                 .ToList();
+
+
+            Console.WriteLine("\nScenario 14 Results:");
+            Console.WriteLine("CategoryId | ProductId | Name                  | Price");
+            Console.WriteLine("-----------|-----------|-----------------------|-------");
+
+            foreach (var res in result)
+            {
+                Console.WriteLine($"{res.CategoryId,-10} | {res.ProductId,-9} | {res.Name,-21} | {res.Price,6}");
+            }
         }
 
 
+        /// <summary>
+        /// Scenario 15 (Orders — recent per customer):
+        /// From the Orders table:
+        /// For each CustomerId, return the MOST RECENT order (latest OrderDate).
+        /// Each result row should include:
+        /// - CustomerId
+        /// - OrderId
+        /// - OrderDate
+        /// - Status
+        /// Sort final results by CustomerId ascending.
+        /// </summary>
+        public void Scenario15()
+        {
+            // TODO: Write your LINQ query here
+            var result = _db.Orders.AsNoTracking()
+                            .ToList()
+                            .GroupBy(g => g.CustomerId)
+                            .SelectMany(g => g
+                                .OrderByDescending(g => g.OrderDate)
+                                .Take(1)
+                                .Select(o => new
+                                {
+                                    CustomerId = g.Key,
+                                    OrderId = o.OrderId,
+                                    OrderDate = o.OrderDate,
+                                    Status = o.Status
+                                }))
+                                .OrderBy(x => x.CustomerId)
+                                .ToList();
+
+            Console.WriteLine("\nScenario 15 Results:");
+            Console.WriteLine("CustomerId | OrderId | OrderDate   | Status");
+            Console.WriteLine("-----------|---------|-------------|---------");
+
+            foreach (var res in result)
+            {
+                Console.WriteLine($"{res.CustomerId,-10} | {res.OrderId,-7} | {res.OrderDate:yyyy-MM-dd} | {res.Status}");
+            }
+
+        }
+
+
+        /// <summary>
+        /// Scenario 16 (Orders — earliest per customer):
+        /// From the Orders table:
+        /// For each CustomerId, return the EARLIEST order (minimum OrderDate).
+        /// Each result row should include:
+        /// - CustomerId
+        /// - OrderId
+        /// - OrderDate
+        /// - Status
+        /// Sort final results by CustomerId ascending.
+        /// </summary>
+        public void Scenario16()
+        {
+            // TODO: Write your LINQ query here
+
+            var result = _db.Orders.AsNoTracking()
+                            .ToList()
+                            .GroupBy(g => g.CustomerId)
+                            .SelectMany(g => g
+                                .OrderBy(g => g.OrderDate)
+                                .ThenBy(o => o.OrderId)
+                                .Take(1)
+                                .Select(o => new
+                                {
+                                    CustomerId = g.Key,
+                                    OrderId = o.OrderId,
+                                    OrderDate = o.OrderDate,
+                                    Status = o.Status
+                                }))
+                            .OrderBy(x => x.CustomerId)
+                            .ToList();
+
+            Console.WriteLine("\nScenario 16 Results:");
+            Console.WriteLine("CustomerId | OrderId | OrderDate   | Status");
+            Console.WriteLine("-----------|---------|-------------|---------");
+            foreach (var r in result)
+            {
+                Console.WriteLine($"{r.CustomerId,-10} | {r.OrderId,-7} | {r.OrderDate:yyyy-MM-dd} | {r.Status}");
+            }
+        }
+
+        /// <summary>
+        /// Scenario 17 (Orders — highest bill per customer):
+        /// From the Orders table:
+        /// For each CustomerId, return the order with the HIGHEST TotalBill.
+        /// Each result row should include:
+        /// - CustomerId
+        /// - OrderId
+        /// - OrderDate
+        /// - TotalBill
+        /// Sort final results by TotalBill descending, then CustomerId ascending.
+        /// </summary>
+        public void Scenario17()
+        {
+            // TODO: Write your LINQ query here
+            var results = _db.Orders.AsNoTracking()
+                              .ToList()
+                              .GroupBy(g => g.CustomerId)
+                              .SelectMany(g => g
+                                   .OrderBy(o => o.TotalBill)
+
+                              
+        }
 
     }
 }
