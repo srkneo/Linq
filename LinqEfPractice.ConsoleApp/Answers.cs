@@ -758,7 +758,6 @@ namespace LinqEfPractice.ConsoleApp
                     AvgBill = g.Average(x => x.TotalBill),
                     MaxBill = g.Max(x => x.TotalBill),
                     Orders = g
-
                 })
                 .ToList();
 
@@ -782,8 +781,151 @@ namespace LinqEfPractice.ConsoleApp
 
             // 4) For each remaining customer, pick the SINGLE order with MaxBill (tie-break: latest OrderDate)
 
+            var result = filtered.
+                Select(x => {
+
+                    var top = x.Orders
+                               .OrderByDescending(o => o.TotalBill)
+                               .ThenByDescending(o => o.OrderDate)
+                               .First();
+
+
+                    return new {
+
+                        x.CustomerId,
+                        OrderId = top.OrderId,
+                        OrderDate = top.OrderDate,
+                        TotalBill = top.TotalBill,
+                        x.OrderCount,
+                        x.FirstOrderDate,
+                        x.LastOrderDate,
+                        x.AvgBill,
+                        x.MaxBill,
+                        x.ActiveDays
+
+                    };
+                })
+                // 6) Final sort
+                .OrderByDescending(r => r.TotalBill)
+                .ThenBy(r => r.CustomerId)
+                .ToList();
+
+            // Pretty print
+            Console.WriteLine("\nScenario 20 Results:");
+            Console.WriteLine("CustomerId | OrderId | OrderDate   | TotalBill | Orders | FirstOrder  | LastOrder   | AvgBill  | MaxBill  | ActiveDays");
+            Console.WriteLine("-----------|---------|-------------|-----------|--------|-------------|-------------|----------|----------|-----------");
+            foreach (var r in result)
+            {
+                Console.WriteLine($"{r.CustomerId,-10} | {r.OrderId,-7} | {r.OrderDate:yyyy-MM-dd} | {r.TotalBill,9:0.00} | " +
+                                  $"{r.OrderCount,6} | {r.FirstOrderDate:yyyy-MM-dd} | {r.LastOrderDate:yyyy-MM-dd} | " +
+                                  $"{r.AvgBill,8:0.00} | {r.MaxBill,8:0.00} | {r.ActiveDays,10:0}");
+            }
+
 
         }
+
+
+        /// <summary>
+        /// Scenario 21 (Orders — highest bill per day):
+        /// From the Orders table:
+        /// For each calendar day (OrderDate.Date), return the SINGLE order
+        /// with the highest TotalBill (tie-breaker: latest OrderDate).
+        /// Return: Date, OrderId, CustomerId, TotalBill, OrderDate.
+        /// Sort by Date ascending, then TotalBill descending.
+        /// </summary>
+        public void Scenario21()
+        {
+            // TODO: Write your LINQ query here
+            var result = _db.Orders.AsNoTracking()
+                            .ToList()
+                            .GroupBy(o => o.OrderDate.Date)
+                            .SelectMany( g => g
+                                
+                                .OrderByDescending(o => o.TotalBill)
+                                .ThenByDescending(o => o.OrderDate)
+                                .Take(1)
+                                .Select(
+                                    s => new { 
+                                        Date = g.Key,
+                                        OrderId = s.OrderId,
+                                        CustomerId = s.CustomerId,
+                                        TotalBill = s.TotalBill,
+                                        OrderDate = s.OrderDate,
+                                    }
+                                ))
+                            .OrderBy(r => r.Date)
+                            .ThenByDescending (r => r.TotalBill)
+                            .ToList();
+
+            // Pretty console output
+            Console.WriteLine("\nScenario 21 Results:");
+            Console.WriteLine("Date        | OrderId | CustomerId | TotalBill | OrderDate");
+            Console.WriteLine("------------|---------|------------|-----------|----------------");
+            foreach (var r in result)
+            {
+                Console.WriteLine($"{r.Date:yyyy-MM-dd} | {r.OrderId,-7} | {r.CustomerId,-10} | {r.TotalBill,9:0.00} | {r.OrderDate:yyyy-MM-dd HH:mm}");
+            }
+
+        }
+
+        /// <summary>
+        /// Scenario 22 (Employees — top salary per department):
+        /// From the Employees table:
+        /// For each DepartmentId, return the SINGLE employee with the HIGHEST Salary
+        /// (tie‑breaker: latest JoinDate, then EmployeeId).
+        /// Return: DepartmentId, EmployeeId, FullName, Salary, JoinDate.
+        /// Sort final results by DepartmentId ascending, then Salary descending.
+        /// </summary>
+        public void Scenario22()
+        {
+            // TODO: Write your LINQ query here
+
+            var result = _db.Employees.AsNoTracking()                            
+                            .ToList()
+                            .GroupBy(e => e.DepartmentId)
+                            .SelectMany( g => g 
+                                        .OrderByDescending(e => e.Salary)
+                                        .ThenByDescending( e => e.JoinDate)
+                                        .ThenBy(e => e.EmployeeId)
+                                        .Take(1)
+                                        .Select(e => new { 
+                                        
+                                            DepartmentId = g.Key,
+                                            EmployeeId = e.EmployeeId,
+                                            FullName = e.FullName,
+                                            Salary = e.Salary,
+                                            JoinDate = e.JoinDate,
+                                        }))
+                            .OrderBy(r => r.DepartmentId)
+                            .ThenByDescending(r => r.Salary)
+                            .ToList();
+
+            Console.WriteLine("\nScenario 22 Results:");
+            Console.WriteLine("DeptId | EmployeeId | FullName               | Salary    | JoinDate");
+            Console.WriteLine("-------|------------|------------------------|-----------|----------");
+            foreach (var r in result)
+            {
+                Console.WriteLine($"{r.DepartmentId,6} | {r.EmployeeId,10} | {r.FullName,-22} | {r.Salary,9:0.00} | {r.JoinDate:yyyy-MM-dd}");
+            }
+
+        }
+
+        /// <summary>
+        /// Scenario 23 (Orders — 2025 filter + latest per status with having):
+        /// Using only the Orders table:
+        /// 1) WHERE: Consider orders with OrderDate >= 2025-01-01.
+        /// 2) GROUP BY: Status.
+        /// 3) HAVING: Keep only statuses where Count >= 2.
+        /// 4) From each remaining status, return the SINGLE most recent order
+        ///    (tie-breaker: highest OrderId).
+        /// Return: Status, OrderId, CustomerId, OrderDate.
+        /// Sort final results by Status ascending.
+        /// </summary>
+        public void Scenario23()
+        {
+            // TODO: Write your LINQ query here
+        }
+
 
 
 
