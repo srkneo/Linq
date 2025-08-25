@@ -29,7 +29,7 @@ db.EnsureSeededFromJson();
 db.EnsureSeededFromJson();
 
 var answers = new Answers(db);
-answers.Scenario22();
+answers.Scenario30();
 
 // --- SQLite context for RAW SQL scenarios ---
 var sqlitePath = Path.Combine(AppContext.BaseDirectory, "PracticeSql.db");

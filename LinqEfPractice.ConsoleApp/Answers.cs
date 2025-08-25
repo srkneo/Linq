@@ -1,5 +1,7 @@
 ﻿using LinqEfPractice;
+using LinqEfPractice.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using System;
 using System.Globalization;
 using System.Linq;
@@ -699,7 +701,8 @@ namespace LinqEfPractice.ConsoleApp
                                 .OrderByDescending(o => o.OrderDate)
                                 .ThenByDescending(o => o.OrderId)
                                 .Take(1)
-                                .Select(o => new {
+                                .Select(o => new
+                                {
                                     Status = o.Status,
                                     OrderId = o.OrderId,
                                     CustomerId = o.CustomerId,
@@ -765,8 +768,9 @@ namespace LinqEfPractice.ConsoleApp
             // 3) Add ActiveDays and apply HAVING
 
             var filtered = grouped
-                            .Select(x => new { 
-                            
+                            .Select(x => new
+                            {
+
                                 x.CustomerId,
                                 x.OrderCount,
                                 x.FirstOrderDate,
@@ -782,7 +786,8 @@ namespace LinqEfPractice.ConsoleApp
             // 4) For each remaining customer, pick the SINGLE order with MaxBill (tie-break: latest OrderDate)
 
             var result = filtered.
-                Select(x => {
+                Select(x =>
+                {
 
                     var top = x.Orders
                                .OrderByDescending(o => o.TotalBill)
@@ -790,7 +795,8 @@ namespace LinqEfPractice.ConsoleApp
                                .First();
 
 
-                    return new {
+                    return new
+                    {
 
                         x.CustomerId,
                         OrderId = top.OrderId,
@@ -839,13 +845,14 @@ namespace LinqEfPractice.ConsoleApp
             var result = _db.Orders.AsNoTracking()
                             .ToList()
                             .GroupBy(o => o.OrderDate.Date)
-                            .SelectMany( g => g
-                                
+                            .SelectMany(g => g
+
                                 .OrderByDescending(o => o.TotalBill)
                                 .ThenByDescending(o => o.OrderDate)
                                 .Take(1)
                                 .Select(
-                                    s => new { 
+                                    s => new
+                                    {
                                         Date = g.Key,
                                         OrderId = s.OrderId,
                                         CustomerId = s.CustomerId,
@@ -854,7 +861,7 @@ namespace LinqEfPractice.ConsoleApp
                                     }
                                 ))
                             .OrderBy(r => r.Date)
-                            .ThenByDescending (r => r.TotalBill)
+                            .ThenByDescending(r => r.TotalBill)
                             .ToList();
 
             // Pretty console output
@@ -880,16 +887,17 @@ namespace LinqEfPractice.ConsoleApp
         {
             // TODO: Write your LINQ query here
 
-            var result = _db.Employees.AsNoTracking()                            
+            var result = _db.Employees.AsNoTracking()
                             .ToList()
                             .GroupBy(e => e.DepartmentId)
-                            .SelectMany( g => g 
+                            .SelectMany(g => g
                                         .OrderByDescending(e => e.Salary)
-                                        .ThenByDescending( e => e.JoinDate)
+                                        .ThenByDescending(e => e.JoinDate)
                                         .ThenBy(e => e.EmployeeId)
                                         .Take(1)
-                                        .Select(e => new { 
-                                        
+                                        .Select(e => new
+                                        {
+
                                             DepartmentId = g.Key,
                                             EmployeeId = e.EmployeeId,
                                             FullName = e.FullName,
@@ -924,8 +932,451 @@ namespace LinqEfPractice.ConsoleApp
         public void Scenario23()
         {
             // TODO: Write your LINQ query here
+            var result = _db.Orders
+                    .AsNoTracking()
+                    .Where(o => o.OrderDate >= new DateTime(2025, 1, 1))
+                    .ToList()
+                    .GroupBy(o => o.Status)
+                    .Where(g => g.Count() >= 2) // HAVING
+                    .SelectMany(g => g
+                        .OrderByDescending(o => o.OrderDate)   // most recent first
+                        .ThenByDescending(o => o.OrderId)      // tie-breaker
+                        .Take(1)                               // just 1 order per status
+                        .Select(o => new
+                        {
+                            Status = o.Status,
+                            o.OrderId,
+                            o.CustomerId,
+                            o.OrderDate
+                        }))
+                    .OrderBy(r => r.Status) // final sort
+                    .ToList();
+
+
+            Console.WriteLine("\nScenario 23 Results:");
+            Console.WriteLine("Status     | OrderId | CustomerId | OrderDate");
+            Console.WriteLine("-----------|---------|------------|-------------");
+            foreach (var r in result)
+            {
+                Console.WriteLine($"{r.Status,-10} | {r.OrderId,-7} | {r.CustomerId,-10} | {r.OrderDate:yyyy-MM-dd HH:mm}");
+            }
+
         }
 
+        /// <summary>
+        /// Scenario 24 (Products — filtered + having + top‑1 per group):
+        /// Using only the Products table:
+        /// 1) WHERE: Consider products with Price >= 500.
+        /// 2) GROUP BY: CategoryId.
+        /// 3) HAVING: Keep only categories where ProductCount >= 2.
+        /// 4) From each remaining category, return the SINGLE most expensive product
+        ///    (tie‑breaker: Name ascending).
+        /// Return: CategoryId, ProductId, Name, Price.
+        /// Sort final results by CategoryId ascending.
+        /// </summary>
+        public void Scenario24()
+        {
+            // TODO: Write your LINQ query here
+
+            var result = _db.Products.AsNoTracking()
+                            .Where(p => p.Price >= 500)
+                            .ToList()
+                            .GroupBy(p => p.CategoryId)
+                            .Where(p => p.Count() > 2)
+                            .SelectMany(g => g
+                                .OrderByDescending(p => p.Price)
+                                .ThenBy(p => p.Name)
+                                .Take(1)
+                                .Select(p => new
+                                {
+
+                                    CategoryId = p.CategoryId,
+                                    ProductId = p.ProductId,
+                                    Name = p.Name,
+                                    Price = p.Price,
+                                }))
+                            .OrderBy(p => p.CategoryId)
+                            .ToList();
+
+            Console.WriteLine("\nScenario 24 Results:");
+            Console.WriteLine("CategoryId | ProductId | Name                 | Price");
+            Console.WriteLine("-----------|-----------|----------------------|-----------");
+            foreach (var r in result)
+            {
+                Console.WriteLine($"{r.CategoryId,-10} | {r.ProductId,-9} | {r.Name,-20} | {r.Price,9:0.00}");
+            }
+        }
+
+        /// <summary>
+        /// Scenario 25 (Products + Categories — basic join):
+        /// List all products with their Category Name.
+        /// Return: ProductId, ProductName, CategoryName, Price.
+        /// Sort by CategoryName ascending, then ProductName ascending.
+        /// </summary>
+        public void Scenario25()
+        {
+            // TODO: Write your LINQ query here (EF Core method syntax, join Products ↔ Categories on CategoryId)
+
+            //Option 1 (explicit join)
+            var result = _db.Products
+                            .AsNoTracking()
+                            .Join(_db.Categories,
+                                    p => p.CategoryId,
+                                    c => c.CategoryId,
+                                    (p, c) => new
+                                    {
+                                        p.ProductId,
+                                        ProductName = p.Name,
+                                        CategoryName = c.Name,
+                                        p.Price
+                                    })
+                            .OrderBy(x => x.CategoryName)
+                            .ThenBy(x => x.ProductName)
+                            .ToList();
+
+            //Option 2(navigation property)
+
+            var result2 = _db.Products
+                            .AsNoTracking()
+                            .Select(p => new
+                            {
+
+                                p.ProductId,
+                                ProductName = p.Name,
+                                CategoryName = p.Category!.Name,
+                                p.Price
+                            })
+                            .OrderBy(x => x.CategoryName)
+                            .ThenBy(x => x.ProductName)
+                            .ToList();
+
+            Console.WriteLine("\nScenario 25 Results:");
+            Console.WriteLine("ProductId | ProductName            | CategoryName        | Price");
+            Console.WriteLine("----------|------------------------|---------------------|----------");
+            foreach (var r in result) // or result2
+            {
+                Console.WriteLine($"{r.ProductId,9} | {r.ProductName,-22} | {r.CategoryName,-19} | {r.Price,8:0.00}");
+            }
+
+
+        }
+
+
+        /// <summary>
+        /// Scenario 26 (Products in a given category):
+        /// List all products that belong to the "Electronics" category.
+        /// Return: ProductId, ProductName, CategoryName, Price.
+        /// Sort by Price descending, then ProductName ascending.
+        /// (Provide both: Option 1 = explicit Join, Option 2 = navigation property)
+        /// </summary>
+        public void Scenario26()
+        {
+            // TODO: Write your LINQ query here (both options)
+            //Option 1 (explicit join)
+
+            var result = _db.Products
+                         .AsNoTracking()
+                         .Join(_db.Categories,
+                                p => p.CategoryId,
+                                c => c.CategoryId,
+                                (p, c) => new
+                                {
+                                    p.ProductId,
+                                    ProductName = p.Name,
+                                    CategoryName = c.Name,
+                                    Price = p.Price
+                                })
+                         .Where(c => c.CategoryName == "Electronics")
+                         .OrderByDescending(p => p.Price)
+                         .ThenBy(p => p.ProductName)
+                         .ToList();
+
+            //Option 2(navigation property)
+            var result2 = _db.Products
+                                .AsNoTracking()
+                                .Where(c => c.Category!.Name == "Electronics")
+                                .Select(p => new
+                                {
+                                    p.ProductId,
+                                    ProductName = p.Name,
+                                    CategoryName = p.Category!.Name,
+                                    Price = p.Price
+                                })
+                                .OrderByDescending(p => p.Price)
+                                .ThenBy(p => p.ProductName)
+                                .ToList();
+
+            Console.WriteLine("\nScenario 26 Results:");
+            Console.WriteLine("ProductId | ProductName            | CategoryName | Price");
+            Console.WriteLine("----------|------------------------|--------------|----------");
+            foreach (var r in result) // or result2
+            {
+                Console.WriteLine($"{r.ProductId,9} | {r.ProductName,-22} | {r.CategoryName,-12} | {r.Price,8:0.00}");
+            }
+
+        }
+
+        /// <summary>
+        /// Scenario 27 (Orders + Customers — 2025 orders with customer name):
+        /// List all orders placed in the year 2025, along with the customer's name.
+        /// Return: OrderId, CustomerName, OrderDate, Status.
+        /// Sort by OrderDate ascending, then CustomerName ascending.
+        /// Provide BOTH:
+        ///   Option 1 = explicit Join (Orders ↔ Customers on CustomerId)
+        ///   Option 2 = navigation property (o.Customer.Name)
+        /// </summary>
+        public void Scenario27()
+        {
+            // TODO: Write your LINQ query here (both options)
+
+
+            //Option 1 = explicit Join(Orders ↔ Customers on CustomerId)
+            var result = _db.Orders.AsNoTracking()
+                            .Where(o => o.OrderDate.Year == 2025)
+                            .Join( _db.Customers,
+                            o => o.CustomerId,
+                            c => c.CustomerId,
+                            (o,c) => new { 
+
+                                o.OrderId,
+                                CustomerName = c.Name,
+                                OrderDate = o.OrderDate,
+                                Status = o.Status,
+                            })
+                            .OrderBy(o => o.OrderDate)
+                            .ThenBy(o => o.CustomerName)
+                            .ToList();
+
+            //Option 2 = navigation property (o.Customer.Name)
+
+            var result2 = _db.Orders.AsNoTracking()
+                            .Where(o => o.OrderDate.Year == 2025)
+                            .Select(o => new {
+                                o.OrderId,
+                                CustomerName = o.Customer!.Name,
+                                OrderDate = o.OrderDate,
+                                Status = o.Status,
+
+                            })
+                            .OrderBy(o => o.OrderDate)
+                            .ThenBy(o => o.CustomerName)
+                            .ToList();
+
+            Console.WriteLine("\nScenario 27 Results:");
+            Console.WriteLine("OrderId | CustomerName         | OrderDate   | Status");
+            Console.WriteLine("--------|----------------------|-------------|---------");
+            foreach (var r in result) // or result2
+            {
+                Console.WriteLine($"{r.OrderId,7} | {r.CustomerName,-20} | {r.OrderDate:yyyy-MM-dd} | {r.Status}");
+            }
+
+
+
+
+        }
+
+
+        /// <summary>
+        /// Scenario 28 (Employees + Departments — active employees):
+        /// List all employees who are Active (IsActive == true),
+        /// along with their Department Name.
+        /// Return: EmployeeId, FullName, DepartmentName, JoinDate.
+        /// Sort by DepartmentName ascending, then FullName ascending.
+        /// Provide BOTH:
+        ///   Option 1 = explicit Join (Employees ↔ Departments on DepartmentId)
+        ///   Option 2 = navigation property (e.Department.Name)
+        /// </summary>
+        public void Scenario28()
+        {
+            // TODO: Write your LINQ query here (both options)
+
+            // Option 1 = explicit Join (Employees ↔ Departments on DepartmentId)
+            var result = _db.Employees.AsNoTracking()
+                            .Where(e => e.IsActive)
+                            .Join(_db.Departments,
+                                e => e.DepartmentId,
+                                d => d.DepartmentId,
+                                (e,d) => new { 
+                                    e.EmployeeId,
+                                    e.FullName,
+                                    DepartmentName = d.Name,
+                                    e.JoinDate
+                                })
+                            .OrderBy(d => d.DepartmentName)
+                            .ThenBy(e => e.FullName)
+                            .ToList();
+
+            //   Option 2 = navigation property (e.Department.Name)
+
+            var result2 = _db.Employees.AsNoTracking()
+                            .Where(e => e.IsActive)
+                            .Select(e => new {
+
+                                e.EmployeeId,
+                                e.FullName,
+                                DepartmentName = e.Department!.Name,
+                                e.JoinDate
+                            })
+                            .OrderBy(d => d.DepartmentName)
+                            .ThenBy(e => e.FullName)
+                            .ToList();
+
+
+            Console.WriteLine("\nScenario 28 Results:");
+            Console.WriteLine("EmployeeId | FullName               | DepartmentName      | JoinDate");
+            Console.WriteLine("-----------|------------------------|---------------------|----------");
+            foreach (var r in result) // or result2
+            {
+                Console.WriteLine($"{r.EmployeeId,10} | {r.FullName,-22} | {r.DepartmentName,-19} | {r.JoinDate:yyyy-MM-dd}");
+            }
+        }
+
+
+        /// <summary>
+        /// Scenario 29 (Customers + Orders — Indian customers with 2025 orders):
+        /// List all orders placed in 2025 by customers whose Country = "India".
+        /// Return: OrderId, CustomerName, Country, OrderDate, Status.
+        /// Sort by CustomerName ascending, then OrderDate ascending.
+        /// Provide BOTH:
+        ///   Option 1 = explicit Join (Customers ↔ Orders on CustomerId)
+        ///   Option 2 = navigation property (o.Customer.Name, o.Customer.Country)
+        /// </summary>
+        public void Scenario29()
+        {
+            // TODO: Write your LINQ query here (both options)
+
+            // Option 1 = explicit Join (Customers ↔ Orders on CustomerId)
+
+            var start = new DateTime(2025, 1, 1);
+            var end = new DateTime(2026, 1, 1);
+
+
+            var result = _db.Orders.AsNoTracking()
+                            .Where(o => o.OrderDate >= start && o.OrderDate < end)
+                            .Join(_db.Customers,
+                                o => o.CustomerId,
+                                c => c.CustomerId,
+                                (o,c) => new { o,c })
+                            .Where(x => x.c.Country  == "India")
+                            .Select
+                                ( x => new {                                 
+                                    x.o.OrderId,
+                                    CustomerName = x.c.Name,
+                                    x.c.Country,
+                                    x.o.OrderDate,
+                                    x.o.Status
+                                })
+                            
+                            .OrderBy(c => c.CustomerName)
+                            .ThenBy(o => o.OrderDate)
+                            .ToList();
+
+
+            // Option 2 = navigation property (o.Customer.Name, o.Customer.Country)
+
+            var result2 = _db.Orders.AsNoTracking()
+                            .Where(o => o.OrderDate >= start && o.OrderDate < end && o.Customer!.Country == "India")
+                            .Select(o => new {
+
+                                o.OrderId,
+                                CustomerName = o.Customer!.Name,
+                                Country = o.Customer!.Country,
+                                o.OrderDate,
+                                o.Status
+
+                            })
+                            .OrderBy(c => c.CustomerName)
+                            .ThenBy(o => o.OrderDate)
+                            .ToList();
+
+            Console.WriteLine("\nScenario 29 Results:");
+            Console.WriteLine("OrderId | CustomerName         | Country | OrderDate   | Status");
+            Console.WriteLine("--------|----------------------|---------|-------------|---------");
+            foreach (var r in result) // or result2
+            {
+                Console.WriteLine($"{r.OrderId,7} | {r.CustomerName,-20} | {r.Country,-7} | {r.OrderDate:yyyy-MM-dd} | {r.Status}");
+            }
+        }
+
+        /// <summary>
+        /// Scenario 30 (OrderItems + Products — 2025 items with product info):
+        /// List all OrderItems from orders placed in 2025,
+        /// along with the Product Name and UnitPrice.
+        /// Return: OrderId, ProductId, ProductName, Quantity, UnitPrice, TotalPrice.
+        /// Sort by OrderId ascending, then ProductName ascending.
+        /// Provide BOTH:
+        ///   Option 1 = explicit Join (OrderItems ↔ Products on ProductId)
+        ///   Option 2 = navigation property (oi.Product.Name, oi.Product.Price)
+        /// </summary>
+        public void Scenario30()
+        {
+            // TODO: Write your LINQ query here (both options)
+
+            //Option 1 = explicit Join (OrderItems ↔ Products on ProductId)
+
+            var start = new DateTime(2025, 1, 1);
+            var end = new DateTime(2026, 1, 1);
+
+
+            var result = _db.OrderItems.AsNoTracking()
+                            .Where(oi => oi.Order!.OrderDate >= start && oi.Order!.OrderDate < end)
+                            .Join(_db.Products,
+                                ot => ot.ProductId,
+                                p => p.ProductId,
+                                (ot,p) => new { ot, p })
+                            .Select(x => new { 
+                            
+                                x.ot.OrderId,
+                                x.p.ProductId,
+                                ProductName = x.p.Name,
+                                x.ot.Quantity,
+                                x.ot.UnitPrice,
+                                TotalPrice = x.ot.UnitPrice * x.ot.Quantity
+                            })
+                            .OrderBy(ot => ot.OrderId)
+                            .ThenBy(p => p.ProductName)
+                            .ToList();
+
+            //Option 2 = navigation property (oi.Product.Name, oi.Product.Price)
+
+            var result2 = _db.OrderItems.AsNoTracking()
+                            .Where(oi => oi.Order!.OrderDate >= start && oi.Order!.OrderDate < end)
+                            .Select(x => new {
+
+                                x.OrderId,
+                                x.Product!.ProductId,
+                                ProductName = x.Product!.Name,
+                                x.Quantity,
+                                x.UnitPrice,
+                                TotalPrice = x.UnitPrice * x.Quantity
+                            })
+                            .OrderBy(ot => ot.OrderId)
+                            .ThenBy(p => p.ProductName)
+                            .ToList();
+
+            Console.WriteLine("\nScenario 30 Results:");
+            Console.WriteLine("OrderId | ProductId | ProductName           | Qty | UnitPrice | TotalPrice");
+            Console.WriteLine("--------|-----------|-----------------------|-----|-----------|-----------");
+            foreach (var r in result) // or result2
+            {
+                Console.WriteLine($"{r.OrderId,7} | {r.ProductId,9} | {r.ProductName,-21} | {r.Quantity,3} | {r.UnitPrice,9:0.00} | {r.TotalPrice,9:0.00}");
+            }
+
+
+
+        }
+
+        /// <summary>
+        /// Scenario 31 (Orders + Customers — status filter):
+        /// List all "Delivered" orders with the customer's name.
+        /// Return: OrderId, CustomerName, OrderDate, Status.
+        /// Sort by CustomerName asc, then OrderDate desc.
+        /// Provide BOTH: explicit Join and navigation property.
+        /// </summary>
+        public void Scenario31()
+        {
+            // TODO: Write your LINQ query here (both options)
+        }
 
 
 
