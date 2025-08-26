@@ -1376,9 +1376,188 @@ namespace LinqEfPractice.ConsoleApp
         public void Scenario31()
         {
             // TODO: Write your LINQ query here (both options)
+
+            // Option 1 = explicit Join 
+
+            var result = _db.Orders.AsNoTracking()
+                            .Where(o => o.Status == "Delivered")
+                            .Join(_db.Customers,
+                                   o => o.CustomerId,
+                                   c => c.CustomerId,
+                                   (o,c) => new { o,c })
+                            .Select(x => new { 
+                            
+                                x.o.OrderId,
+                                CustomerName = x.c.Name,
+                                x.o.OrderDate,
+                                x.o.Status
+                            })
+                            .OrderBy(c => c.CustomerName)
+                            .ThenByDescending(c => c.OrderDate)
+                            .ToList();
+
+
+            // Option 2 = navigation property
+
+            var result2 = _db.Orders.AsNoTracking()
+                            .Where(o => o.Status == "Delivered")
+                            .Select(o => new {
+
+                                o.OrderId,
+                                CustomerName = o.Customer!.Name,
+                                o.OrderDate,
+                                o.Status
+                            })
+                            .OrderBy(c => c.CustomerName)
+                            .ThenByDescending(o => o.OrderDate)
+                            .ToList();
+
+
+            Console.WriteLine("\nScenario 31 Results:");
+            Console.WriteLine("OrderId | CustomerName         | OrderDate           | Status");
+            Console.WriteLine("--------|----------------------|---------------------|--------");
+            foreach (var r in result) // or result2
+            {
+                Console.WriteLine($"{r.OrderId,7} | {r.CustomerName,-20} | {r.OrderDate:yyyy-MM-dd HH:mm} | {r.Status}");
+            }
+
         }
 
 
+        /// <summary>
+        /// Scenario 32 (OrderItems + Products — 2025 totals per product, with grouping):
+        /// Using OrderItems and Products:
+        /// 1) Consider only items whose parent Order was placed in 2025.
+        /// 2) Group by ProductId.
+        /// 3) For each product, return:
+        ///    - ProductId
+        ///    - ProductName
+        ///    - TotalQtySold (sum of Quantity)
+        ///    - TotalRevenue (sum of UnitPrice * Quantity)
+        /// 4) Sort by TotalQtySold descending, then ProductName ascending.
+        /// Provide BOTH:
+        ///   Option 1 = explicit Join (OrderItems ↔ Products on ProductId, and filter by oi.Order.OrderDate)
+        ///   Option 2 = navigation property (oi.Product.Name, oi.Order.OrderDate)
+        /// </summary>
+        public void Scenario32()
+        {
+            // TODO: Write BOTH Option 1 (Join) and Option 2 (Navigation) queries here
+            // Option 1 = explicit Join 
+
+            var start = new DateTime(2025, 1, 1);
+            var end = new DateTime(2026, 1, 1);
+
+            var result = _db.OrderItems.AsNoTracking()
+                            .Where(oi => oi.Order!.OrderDate >= start && oi.Order!.OrderDate < end)
+                            .Join(_db.Products,
+                                 oi => oi.ProductId,
+                                 p => p.ProductId,
+                                 (oi,p) => new { oi,p })
+                            .GroupBy(x => new { x.p.ProductId, x.p.Name })
+                            .Select( g => new { 
+                            
+                                g.Key.ProductId,
+                                ProductName = g.Key.Name,
+                                TotalQtySold = g.Sum(x => x.oi.Quantity),
+                                TotalRevenue = g.Sum(x=> x.oi.UnitPrice * x.oi.Quantity)
+                            })
+                            .OrderByDescending(x => x.TotalQtySold)
+                            .ThenBy(p => p.ProductName)
+                            .ToList();
+
+
+            // Option 2 = navigation property
+
+            var result2 = _db.OrderItems.AsNoTracking()
+                            .Where(oi => oi.Order!.OrderDate >= start && oi.Order!.OrderDate < end)
+                            .GroupBy(x => new { x.Product!.ProductId, x.Product!.Name })
+                            .Select(g => new { 
+                            
+                                g.Key.ProductId,
+                                ProductName = g.Key.Name,
+                                TotalQtySold = g.Sum(x => x.Quantity),
+                                TotalRevenue = g.Sum(x => x.UnitPrice * x.Quantity)
+                            })
+                            .OrderByDescending(x => x.TotalQtySold)
+                            .ThenBy(p => p.ProductName)
+                            .ToList();
+
+            Console.WriteLine("\nScenario 32 Results:");
+            Console.WriteLine("ProductId | ProductName           | TotalQty | TotalRevenue");
+            Console.WriteLine("----------|-----------------------|---------:|------------:");
+            foreach (var r in result) // or result2
+            {
+                Console.WriteLine($"{r.ProductId,9} | {r.ProductName,-21} | {r.TotalQtySold,8} | {r.TotalRevenue,12:0.00}");
+            }
+
+        }
+
+        /// <summary>
+        /// Scenario 33 (Employees + Departments — active headcount per department):
+        /// Using Employees and Departments:
+        /// 1) Consider only employees where IsActive == true.
+        /// 2) Group by DepartmentId (and include Department Name).
+        /// 3) For each group, return:
+        ///    - DepartmentId
+        ///    - DepartmentName
+        ///    - ActiveCount (number of active employees)
+        /// 4) Sort by ActiveCount descending, then DepartmentName ascending.
+        /// Provide BOTH:
+        ///   Option 1 = explicit Join (Employees ↔ Departments on DepartmentId)
+        ///   Option 2 = navigation property (e.Department.Name)
+        /// </summary>
+        public void Scenario33()
+        {
+            // TODO: Write BOTH Option 1 (Join) and Option 2 (Navigation) queries here
+
+            // Option 1 = explicit Join 
+
+            var result = _db.Employees.AsNoTracking()
+                            .Where(e => e.IsActive)
+                            .Join(_db.Departments,
+                                    e => e.DepartmentId,
+                                    d => d.DepartmentId,
+                                    (e,d) => new { e,d })
+                            .GroupBy(x => new { x.d.DepartmentId, x.d.Name })
+                            .Select(g => new { 
+                            
+                                g.Key.DepartmentId,
+                                DepartmentName = g.Key.Name,
+                                ActiveCount = g.Count()
+                            })
+                            .OrderByDescending(x => x.ActiveCount)
+                            .ThenBy(d => d.DepartmentName)
+                            .ToList();
+
+
+
+
+            // Option 2 = navigation property
+
+            var result2 = _db.Employees.AsNoTracking()
+                            .Where(e => e.IsActive)
+                            .GroupBy(x => new { x.Department!.DepartmentId, x.Department!.Name })
+                            .Select(g => new {
+
+                                g.Key.DepartmentId,
+                                DepartmentName = g.Key.Name,
+                                ActiveCount = g.Count()
+                            })
+                            .OrderByDescending(x => x.ActiveCount)
+                            .ThenBy(d => d.DepartmentName)
+                            .ToList();
+
+            Console.WriteLine("\nScenario 33 Results:");
+            Console.WriteLine("DepartmentId | DepartmentName        | ActiveCount");
+            Console.WriteLine("-------------|-----------------------|------------");
+            foreach (var r in result) // or result2
+            {
+                Console.WriteLine($"{r.DepartmentId,12} | {r.DepartmentName,-21} | {r.ActiveCount,11}");
+            }
+
+
+        }
 
     }
 }
+
