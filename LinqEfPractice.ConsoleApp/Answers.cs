@@ -1133,10 +1133,11 @@ namespace LinqEfPractice.ConsoleApp
             //Option 1 = explicit Join(Orders ↔ Customers on CustomerId)
             var result = _db.Orders.AsNoTracking()
                             .Where(o => o.OrderDate.Year == 2025)
-                            .Join( _db.Customers,
+                            .Join(_db.Customers,
                             o => o.CustomerId,
                             c => c.CustomerId,
-                            (o,c) => new { 
+                            (o, c) => new
+                            {
 
                                 o.OrderId,
                                 CustomerName = c.Name,
@@ -1151,7 +1152,8 @@ namespace LinqEfPractice.ConsoleApp
 
             var result2 = _db.Orders.AsNoTracking()
                             .Where(o => o.OrderDate.Year == 2025)
-                            .Select(o => new {
+                            .Select(o => new
+                            {
                                 o.OrderId,
                                 CustomerName = o.Customer!.Name,
                                 OrderDate = o.OrderDate,
@@ -1196,7 +1198,8 @@ namespace LinqEfPractice.ConsoleApp
                             .Join(_db.Departments,
                                 e => e.DepartmentId,
                                 d => d.DepartmentId,
-                                (e,d) => new { 
+                                (e, d) => new
+                                {
                                     e.EmployeeId,
                                     e.FullName,
                                     DepartmentName = d.Name,
@@ -1210,7 +1213,8 @@ namespace LinqEfPractice.ConsoleApp
 
             var result2 = _db.Employees.AsNoTracking()
                             .Where(e => e.IsActive)
-                            .Select(e => new {
+                            .Select(e => new
+                            {
 
                                 e.EmployeeId,
                                 e.FullName,
@@ -1256,17 +1260,18 @@ namespace LinqEfPractice.ConsoleApp
                             .Join(_db.Customers,
                                 o => o.CustomerId,
                                 c => c.CustomerId,
-                                (o,c) => new { o,c })
-                            .Where(x => x.c.Country  == "India")
+                                (o, c) => new { o, c })
+                            .Where(x => x.c.Country == "India")
                             .Select
-                                ( x => new {                                 
+                                (x => new
+                                {
                                     x.o.OrderId,
                                     CustomerName = x.c.Name,
                                     x.c.Country,
                                     x.o.OrderDate,
                                     x.o.Status
                                 })
-                            
+
                             .OrderBy(c => c.CustomerName)
                             .ThenBy(o => o.OrderDate)
                             .ToList();
@@ -1276,7 +1281,8 @@ namespace LinqEfPractice.ConsoleApp
 
             var result2 = _db.Orders.AsNoTracking()
                             .Where(o => o.OrderDate >= start && o.OrderDate < end && o.Customer!.Country == "India")
-                            .Select(o => new {
+                            .Select(o => new
+                            {
 
                                 o.OrderId,
                                 CustomerName = o.Customer!.Name,
@@ -1323,9 +1329,10 @@ namespace LinqEfPractice.ConsoleApp
                             .Join(_db.Products,
                                 ot => ot.ProductId,
                                 p => p.ProductId,
-                                (ot,p) => new { ot, p })
-                            .Select(x => new { 
-                            
+                                (ot, p) => new { ot, p })
+                            .Select(x => new
+                            {
+
                                 x.ot.OrderId,
                                 x.p.ProductId,
                                 ProductName = x.p.Name,
@@ -1341,7 +1348,8 @@ namespace LinqEfPractice.ConsoleApp
 
             var result2 = _db.OrderItems.AsNoTracking()
                             .Where(oi => oi.Order!.OrderDate >= start && oi.Order!.OrderDate < end)
-                            .Select(x => new {
+                            .Select(x => new
+                            {
 
                                 x.OrderId,
                                 x.Product!.ProductId,
@@ -1384,9 +1392,10 @@ namespace LinqEfPractice.ConsoleApp
                             .Join(_db.Customers,
                                    o => o.CustomerId,
                                    c => c.CustomerId,
-                                   (o,c) => new { o,c })
-                            .Select(x => new { 
-                            
+                                   (o, c) => new { o, c })
+                            .Select(x => new
+                            {
+
                                 x.o.OrderId,
                                 CustomerName = x.c.Name,
                                 x.o.OrderDate,
@@ -1401,7 +1410,8 @@ namespace LinqEfPractice.ConsoleApp
 
             var result2 = _db.Orders.AsNoTracking()
                             .Where(o => o.Status == "Delivered")
-                            .Select(o => new {
+                            .Select(o => new
+                            {
 
                                 o.OrderId,
                                 CustomerName = o.Customer!.Name,
@@ -1452,14 +1462,15 @@ namespace LinqEfPractice.ConsoleApp
                             .Join(_db.Products,
                                  oi => oi.ProductId,
                                  p => p.ProductId,
-                                 (oi,p) => new { oi,p })
+                                 (oi, p) => new { oi, p })
                             .GroupBy(x => new { x.p.ProductId, x.p.Name })
-                            .Select( g => new { 
-                            
+                            .Select(g => new
+                            {
+
                                 g.Key.ProductId,
                                 ProductName = g.Key.Name,
                                 TotalQtySold = g.Sum(x => x.oi.Quantity),
-                                TotalRevenue = g.Sum(x=> x.oi.UnitPrice * x.oi.Quantity)
+                                TotalRevenue = g.Sum(x => x.oi.UnitPrice * x.oi.Quantity)
                             })
                             .OrderByDescending(x => x.TotalQtySold)
                             .ThenBy(p => p.ProductName)
@@ -1471,8 +1482,9 @@ namespace LinqEfPractice.ConsoleApp
             var result2 = _db.OrderItems.AsNoTracking()
                             .Where(oi => oi.Order!.OrderDate >= start && oi.Order!.OrderDate < end)
                             .GroupBy(x => new { x.Product!.ProductId, x.Product!.Name })
-                            .Select(g => new { 
-                            
+                            .Select(g => new
+                            {
+
                                 g.Key.ProductId,
                                 ProductName = g.Key.Name,
                                 TotalQtySold = g.Sum(x => x.Quantity),
@@ -1517,10 +1529,11 @@ namespace LinqEfPractice.ConsoleApp
                             .Join(_db.Departments,
                                     e => e.DepartmentId,
                                     d => d.DepartmentId,
-                                    (e,d) => new { e,d })
+                                    (e, d) => new { e, d })
                             .GroupBy(x => new { x.d.DepartmentId, x.d.Name })
-                            .Select(g => new { 
-                            
+                            .Select(g => new
+                            {
+
                                 g.Key.DepartmentId,
                                 DepartmentName = g.Key.Name,
                                 ActiveCount = g.Count()
@@ -1537,7 +1550,8 @@ namespace LinqEfPractice.ConsoleApp
             var result2 = _db.Employees.AsNoTracking()
                             .Where(e => e.IsActive)
                             .GroupBy(x => new { x.Department!.DepartmentId, x.Department!.Name })
-                            .Select(g => new {
+                            .Select(g => new
+                            {
 
                                 g.Key.DepartmentId,
                                 DepartmentName = g.Key.Name,
@@ -1558,6 +1572,516 @@ namespace LinqEfPractice.ConsoleApp
 
         }
 
+        /// <summary>
+        /// Scenario 34 (Orders + Customers — 2025 orders per country):
+        /// Using Orders and Customers:
+        /// 1) Consider orders placed in 2025.
+        /// 2) Group by Country (from Customers).
+        /// 3) For each group, return:
+        ///    - Country
+        ///    - OrderCount (number of orders in 2025)
+        /// 4) Sort by OrderCount descending, then Country ascending.
+        /// Provide BOTH:
+        ///   Option 1 = explicit Join (Orders ↔ Customers on CustomerId)
+        ///   Option 2 = navigation property (o.Customer.Country)
+        /// </summary>
+        public void Scenario34()
+        {
+            // TODO: Write BOTH Option 1 (Join) and Option 2 (Navigation) queries here
+
+            //Option 1 (Join)
+            var start = new DateTime(2025, 1, 1);
+            var end = new DateTime(2026, 1, 1);
+
+            var result = _db.Orders.AsNoTracking()
+                            .Where(o => o.OrderDate >= start && o.OrderDate < end)
+                            .Join(_db.Customers,
+                                o => o.CustomerId,
+                                c => c.CustomerId,
+                                (o, c) => new { o, c }
+                            )
+                            .GroupBy(x => x.c.Country)
+                            .Select(g => new
+                            {
+
+                                Country = g.Key,
+                                OrderCount = g.Count()
+                            })
+                            .OrderByDescending(o => o.OrderCount)
+                            .ThenBy(c => c.Country)
+                            .ToList();
+
+            // Option 2 = navigation property
+
+            var result2 = _db.Orders.AsNoTracking()
+                           .Where(o => o.OrderDate >= start && o.OrderDate < end)
+                           .GroupBy(x => x.Customer!.Country)
+                           .Select(g => new
+                           {
+
+                               Country = g.Key,
+                               OrderCount = g.Count()
+                           })
+                            .OrderByDescending(o => o.OrderCount)
+                            .ThenBy(c => c.Country)
+                            .ToList();
+
+            Console.WriteLine("\nScenario 34 Results:");
+            Console.WriteLine("Country        | OrderCount");
+            Console.WriteLine("----------------|-----------");
+            foreach (var r in result) // or result2
+            {
+                Console.WriteLine($"{r.Country,-15} | {r.OrderCount,10}");
+            }
+
+
+        }
+
+
+        /// <summary>
+        /// Scenario 35 (Products + Categories — average price per category):
+        /// Using Products and Categories:
+        /// 1) Group products by Category.
+        /// 2) For each group, return:
+        ///    - CategoryId
+        ///    - CategoryName
+        ///    - ProductCount (number of products in the category)
+        ///    - AvgPrice (average product price)
+        /// 3) Only include categories where ProductCount >= 2 (HAVING condition).
+        /// 4) Sort by AvgPrice descending, then CategoryName ascending.
+        /// Provide BOTH:
+        ///   Option 1 = explicit Join (Products ↔ Categories on CategoryId)
+        ///   Option 2 = navigation property (p.Category.Name)
+        /// </summary>
+        public void Scenario35()
+        {
+            // TODO: Write BOTH Option 1 (Join) and Option 2 (Navigation) queries here
+
+
+            // Option 1 = explicit Join (Products ↔ Categories on CategoryId)
+            var result = _db.Products.AsNoTracking()
+                            .Join(_db.Categories,
+                                p => p.CategoryId,
+                                c => c.CategoryId,
+                                (p, c) => new { p, c })
+                            .GroupBy(x => new { x.c.CategoryId, x.c.Name })
+                            .Select(g => new
+                            {
+
+                                CategoryId = g.Key.CategoryId,
+                                CategoryName = g.Key.Name,
+                                ProductCount = g.Count(),
+                                AvgPrice = g.Average(x => x.p.Price)
+                            })
+                            .Where(p => p.ProductCount >= 2)
+                            .OrderByDescending(p => p.AvgPrice)
+                            .ThenBy(c => c.CategoryName)
+                            .ToList();
+
+
+            //Option 2 = navigation property (p.Category.Name)
+
+            var result2 = _db.Products.AsNoTracking()
+                           .GroupBy(x => new { x.Category!.CategoryId, x.Category!.Name })
+                           .Select(g => new
+                           {
+                               CategoryId = g.Key.CategoryId,
+                               CategoryName = g.Key.Name,
+                               ProductCount = g.Count(),
+                               AvgPrice = g.Average(x => x.Price)
+                           })
+                            .Where(p => p.ProductCount >= 2)
+                            .OrderByDescending(p => p.AvgPrice)
+                            .ThenBy(c => c.CategoryName)
+                            .ToList();
+
+            Console.WriteLine("\nScenario 35 Results:");
+            Console.WriteLine("CategoryId | CategoryName          | ProductCount | AvgPrice");
+            Console.WriteLine("-----------|-----------------------|-------------:|---------:");
+            foreach (var r in result) // or result2
+            {
+                Console.WriteLine($"{r.CategoryId,10} | {r.CategoryName,-21} | {r.ProductCount,12} | {r.AvgPrice,8:0.00}");
+            }
+
+
+
+
+
+        }
+
+
+        /// <summary>
+        /// Scenario 36 (Orders + Customers — 2025 order stats per customer):
+        /// Using Orders and Customers:
+        /// 1) Consider orders placed in 2025.
+        /// 2) Group by CustomerId (and include Customer Name).
+        /// 3) For each group, return:
+        ///    - CustomerId
+        ///    - CustomerName
+        ///    - OrderCount (number of orders)
+        ///    - TotalBill (sum of TotalBill)
+        ///    - AvgBill (average TotalBill)
+        /// 4) Only include customers where OrderCount >= 2 (HAVING).
+        /// 5) Sort by TotalBill descending, then CustomerName ascending.
+        /// Provide BOTH:
+        ///   Option 1 = explicit Join (Orders ↔ Customers on CustomerId)
+        ///   Option 2 = navigation property (o.Customer.Name)
+        /// </summary>
+        public void Scenario36()
+        {
+            // TODO: Write BOTH Option 1 (Join) and Option 2 (Navigation) queries here
+
+            //Option 1 (Join)
+            var start = new DateTime(2025, 1, 1);
+            var end = new DateTime(2026, 1, 1);
+
+
+            var result = _db.Orders.AsNoTracking()
+                            .Where(o => o.OrderDate >= start && o.OrderDate < end)
+                            .Join(_db.Customers,
+                                o => o.CustomerId,
+                                c => c.CustomerId,
+                                (o, c) => new { o, c }
+                            )
+                            .GroupBy(x => new { x.c.CustomerId, x.c.Name })
+                            .Select(g => new {
+
+                                g.Key.CustomerId,
+                                CustomerName = g.Key.Name,
+                                OrderCount = g.Count(),
+                                TotalBill = g.Sum(x => x.o.TotalBill),
+                                AvgBill = g.Average(x => x.o.TotalBill)
+                            })
+                            .Where(c => c.OrderCount >= 2)
+                            .OrderByDescending(o => o.TotalBill)
+                            .ThenBy(c => c.CustomerName)
+                            .ToList();
+
+            //Option 2 = navigation property
+
+            var result2 = _db.Orders.AsNoTracking()
+                            .Where(o => o.OrderDate >= start && o.OrderDate < end)
+                            .GroupBy(x => new { x.CustomerId, x.Customer!.Name })
+                            .Select(g => new {
+
+                                g.Key.CustomerId,
+                                CustomerName = g.Key.Name,
+                                OrderCount = g.Count(),
+                                TotalBill = g.Sum(x => x.TotalBill),
+                                AvgBill = g.Average(x => x.TotalBill)
+                            })
+                            .Where(c => c.OrderCount >= 2)
+                            .OrderByDescending(o => o.TotalBill)
+                            .ThenBy(c => c.CustomerName)
+                            .ToList();
+
+            Console.WriteLine("\nScenario 36 Results:");
+            Console.WriteLine("CustomerId | CustomerName         | OrderCount | TotalBill  | AvgBill");
+            Console.WriteLine("-----------|----------------------|-----------:|-----------:|--------:");
+            foreach (var r in result) // or result2
+            {
+                Console.WriteLine($"{r.CustomerId,10} | {r.CustomerName,-20} | {r.OrderCount,10} | {r.TotalBill,10:0.00} | {r.AvgBill,7:0.00}");
+            }
+
+
+
+        }
+
+        /// <summary>
+        /// Scenario 37 (Orders + Customers — 2025 orders per customer + latest date):
+        /// Using Orders and Customers:
+        /// 1) Consider orders placed in 2025.
+        /// 2) Group by Customer (CustomerId + Name).
+        /// 3) For each group, return:
+        ///    - CustomerId
+        ///    - CustomerName
+        ///    - OrderCount
+        ///    - LastOrderDate (max OrderDate)
+        /// 4) Keep only customers where OrderCount >= 2 (HAVING).
+        /// 5) Sort by OrderCount descending, then CustomerName ascending.
+        /// Provide BOTH:
+        ///   Option 1 = explicit Join (Orders ↔ Customers on CustomerId)
+        ///   Option 2 = navigation property (o.Customer.Name)
+        /// </summary>
+        public void Scenario37()
+        {
+            // TODO: Write BOTH Option 1 (Join) and Option 2 (Navigation) queries here
+
+            
+            var start = new DateTime(2025, 1, 1);
+            var end = new DateTime(2026, 1, 1);
+
+
+            //Option 1 (Join)
+            var result = _db.Orders.AsNoTracking()
+                            .Where(o => o.OrderDate >= start && o.OrderDate < end)
+                            .Join(_db.Customers,
+                                o => o.CustomerId,
+                                c => c.CustomerId,
+                                (o, c) => new { o, c })
+                            .GroupBy(x => new { x.c.CustomerId, x.c.Name })
+                            .Where(g => g.Count() >= 2)
+                            .Select(g => new
+                            {
+
+                                g.Key.CustomerId,
+                                CustomerName = g.Key.Name,
+                                OrderCount = g.Count(),
+                                LastOrderDate = g.Max(x => x.o.OrderDate)
+                            })                            
+                            .OrderByDescending(x => x.OrderCount)
+                            .ThenBy(c => c.CustomerName)
+                            .ToList();
+
+            //Option 2 = navigation property
+
+            var result2 = _db.Orders.AsNoTracking()
+                            .Where(o => o.OrderDate >= start && o.OrderDate < end)
+                            .GroupBy(x => new { x.CustomerId, x.Customer!.Name })
+                            .Where(g => g.Count() >= 2)
+                            .Select(g => new
+                            {
+
+                                g.Key.CustomerId,
+                                CustomerName = g.Key.Name,
+                                OrderCount = g.Count(),
+                                LastOrderDate = g.Max(x => x.OrderDate)
+                            })
+                            
+                            .OrderByDescending(x => x.OrderCount)
+                            .ThenBy(c => c.CustomerName)
+                            .ToList();
+
+            Console.WriteLine("\nScenario 37 Results:");
+            Console.WriteLine("CustomerId | CustomerName         | OrderCount | LastOrderDate");
+            Console.WriteLine("-----------|----------------------|-----------:|---------------");
+            foreach (var r in result) // or result2
+            {
+                Console.WriteLine($"{r.CustomerId,10} | {r.CustomerName,-20} | {r.OrderCount,10} | {r.LastOrderDate:yyyy-MM-dd}");
+            }
+
+
+
+        }
+
+        /// <summary>
+        /// Scenario 38 (Employees + Departments — average salary per department):
+        /// Using Employees and Departments:
+        /// 1) Consider only employees where IsActive == true.
+        /// 2) Group by Department (DepartmentId + Name).
+        /// 3) For each group, return:
+        ///    - DepartmentId
+        ///    - DepartmentName
+        ///    - ActiveCount  (number of active employees)
+        ///    - AvgSalary    (average Salary of active employees)
+        /// 4) Keep only departments where ActiveCount >= 2 (HAVING).
+        /// 5) Sort by AvgSalary descending, then DepartmentName ascending.
+        /// Provide BOTH:
+        ///   Option 1 = explicit Join (Employees ↔ Departments on DepartmentId)
+        ///   Option 2 = navigation property (e.Department.Name)
+        /// </summary>
+        public void Scenario38()
+        {
+            // TODO: Write BOTH Option 1 (Join) and Option 2 (Navigation) queries here
+
+            //Option 1 (Join)
+
+            var result = _db.Employees.AsNoTracking()
+                            .Where(e => e.IsActive)
+                            .Join(_db.Departments,
+                                    e => e.DepartmentId,
+                                    d => d.DepartmentId,
+                                    (e, d) => new { e, d })
+                            .GroupBy(g => new { g.d.DepartmentId, g.d.Name })
+                            .Where(g => g.Count() >= 2)
+                            .Select(g => new
+                            {
+
+                                g.Key.DepartmentId,
+                                DepartmentName = g.Key.Name,
+                                ActiveCount = g.Count(),
+                                AvgSalary = g.Average(x => x.e.Salary)
+                            })
+                            
+                            .OrderByDescending(x => x.AvgSalary)
+                            .ThenBy(x => x.DepartmentName)
+                            .ToList();
+
+            //Option 2 (Navigation)
+            var result2 = _db.Employees.AsNoTracking()
+                            .Where(e => e.IsActive)
+                            .GroupBy(g => new { g.DepartmentId, g.Department!.Name })
+                            .Where(g => g.Count() >= 2)
+                            .Select(g => new
+                            {
+
+                                g.Key.DepartmentId,
+                                DepartmentName = g.Key.Name,
+                                ActiveCount = g.Count(),
+                                AvgSalary = g.Average(x => x.Salary)
+                            })
+                            .OrderByDescending(x => x.AvgSalary)
+                            .ThenBy(x => x.DepartmentName)
+                            .ToList();
+
+            Console.WriteLine("\nScenario 38 Results:");
+            Console.WriteLine("DepartmentId | DepartmentName        | ActiveCount | AvgSalary");
+            Console.WriteLine("-------------|-----------------------|------------:|---------:");
+            foreach (var r in result) // or result2
+            {
+                Console.WriteLine($"{r.DepartmentId,12} | {r.DepartmentName,-21} | {r.ActiveCount,12} | {r.AvgSalary,8:0.00}");
+            }
+
+
+
+        }
+
+        /// <summary>
+        /// Scenario 39 (Employees + Departments — top salary per department with WHERE):
+        /// Using Employees and Departments:
+        /// 1) WHERE: Only consider employees where IsActive == true AND JoinDate >= 2024-01-01.
+        /// 2) Group by Department (DepartmentId + Name).
+        /// 3) From each group, return the SINGLE employee with the HIGHEST Salary
+        ///    (tie-breakers: latest JoinDate, then lowest EmployeeId).
+        /// 4) Return: DepartmentId, DepartmentName, EmployeeId, FullName, Salary, JoinDate.
+        /// 5) Sort final results by DepartmentName ascending, then Salary descending.
+        /// Provide BOTH:
+        ///   Option 1 = explicit Join (Employees ↔ Departments on DepartmentId)
+        ///   Option 2 = navigation property (e.Department.Name)
+        /// </summary>
+        public void Scenario39()
+        {
+            // TODO: Write BOTH Option 1 (Join) and Option 2 (Navigation) queries here
+
+            // Option 1 (Join)
+            var result = _db.Employees.AsNoTracking()
+                            .Where(x => x.IsActive && x.JoinDate >= new DateTime(2024, 1, 1))
+                           
+                            .Join(_db.Departments,
+                                    e => e.DepartmentId,
+                                    d => d.DepartmentId,
+                                    (e, d) => new { e, d })
+                            .GroupBy(g => new { g.d.DepartmentId, g.d.Name })
+                            .ToList()
+                            .SelectMany(g => g
+                               .OrderByDescending(g => g.e.Salary)
+                               .ThenByDescending(g => g.e.JoinDate)
+                               .ThenBy(g => g.e.EmployeeId)
+                               .Take(1)
+                               .Select(x => new
+                               {
+
+                                   x.d.DepartmentId,
+                                   DepartmentName = x.d.Name,
+                                   x.e.EmployeeId,
+                                   x.e.FullName,
+                                   x.e.Salary,
+                                   x.e.JoinDate
+                               }))
+                            .OrderBy(x => x.DepartmentName)
+                            .ThenByDescending(x => x.Salary)
+                            .ToList();
+
+            //Option 2 (Navigation)
+            var result2 = _db.Employees.AsNoTracking()
+                .Where(x => x.IsActive && x.JoinDate >= new DateTime(2024, 1, 1))                
+                .GroupBy(g => new { g.DepartmentId, g.Department!.Name })
+                .ToList()
+                            .SelectMany(g => g
+                               .OrderByDescending(g => g.Salary)
+                               .ThenByDescending(g => g.JoinDate)
+                               .ThenBy(g => g.EmployeeId)
+                               .Take(1)
+                               .Select(x => new
+                               {
+
+                                   x.DepartmentId,
+                                   DepartmentName = x.Department!.Name,
+                                   x.EmployeeId,
+                                   x.FullName,
+                                   x.Salary,
+                                   x.JoinDate
+                               }))
+                            .OrderBy(x => x.DepartmentName)
+                            .ThenByDescending(x => x.Salary)
+                            .ToList();
+
+
+            Console.WriteLine("\nScenario 39 Results:");
+            Console.WriteLine("DeptId | DepartmentName        | EmployeeId | FullName              | Salary    | JoinDate");
+            Console.WriteLine("-------|-----------------------|------------|-----------------------|-----------|----------");
+            foreach (var r in result) // or result2
+            {
+                Console.WriteLine($"{r.DepartmentId,6} | {r.DepartmentName,-21} | {r.EmployeeId,10} | {r.FullName,-21} | {r.Salary,9:0.00} | {r.JoinDate:yyyy-MM-dd}");
+            }
+
+        }
+
+
+        /// <summary>
+        /// Scenario 40 (Orders + Customers — 2025 orders per country with revenue):
+        /// Using Orders and Customers:
+        /// 1) Consider only orders placed in 2025.
+        /// 2) Group by Country (from Customers).
+        /// 3) For each group, return:
+        ///    - Country
+        ///    - OrderCount (number of orders)
+        ///    - TotalRevenue (sum of TotalBill)
+        ///    - AvgRevenue   (average TotalBill)
+        /// 4) Keep only countries where OrderCount >= 2 (HAVING).
+        /// 5) Sort by TotalRevenue descending, then Country ascending.
+        /// Provide BOTH:
+        ///   Option 1 = explicit Join (Orders ↔ Customers on CustomerId)
+        ///   Option 2 = navigation property (o.Customer.Country)
+        /// </summary>
+        public void Scenario40()
+        {
+            // TODO: Write BOTH Option 1 (Join) and Option 2 (Navigation) queries here
+
+
+            var start = new DateTime(2025, 1, 1);
+            var end = new DateTime(2026, 1, 1);
+
+            //Option 1 (Join)
+            var result = _db.Orders.AsNoTracking()
+                            .Where(o => o.OrderDate >= start && o.OrderDate < end)
+                            .Join(_db.Customers,
+                                   o => o.CustomerId,
+                                   c => c.CustomerId,
+                                   (o, c) => new { o, c })
+                            .GroupBy(g => g.c.Country)
+                            .Where(g => g.Count() >= 2)
+                            .Select(g => new
+                            {
+                                Country = g.Key,
+                                OrderCount = g.Count(),
+                                TotalRevenue = g.Sum(x => x.o.TotalBill),
+                                AvgRevenue = g.Average(x => x.o.TotalBill)
+                            })
+                            .OrderByDescending(x => x.TotalRevenue)
+                            .ThenBy(x => x.Country)
+                            .ToList();
+
+            //Option 2 (Navigation)
+
+            var result2 = _db.Orders.AsNoTracking()
+                            .Where(o => o.OrderDate >= start && o.OrderDate < end)
+                            .GroupBy(g => g.Customer!.Country)
+                            .Where(g => g.Count() >= 2)
+                            .Select(g => new
+                            {
+                                Country = g.Key,
+                                OrderCount = g.Count(),
+                                TotalRevenue = g.Sum(x => x.TotalBill),
+                                AvgRevenue = g.Average(x => x.TotalBill)
+                            })
+                            .OrderByDescending(x => x.TotalRevenue)
+                            .ThenBy(x => x.Country)
+                            .ToList();
+
+
+
+        }
     }
 }
 

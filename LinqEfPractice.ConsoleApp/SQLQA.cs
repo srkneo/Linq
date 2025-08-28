@@ -142,31 +142,82 @@ namespace LinqEfPractice.ConsoleApp
                 });
         }
 
-        // Scenario 11: Employees joined >= 2022-01-01, group by year, having >=2
-        public List<JoinYearAggRow> Scenario11()
+        
+        public List<EmployeeRow> SQLScenario1()
         {
-            const string sql = @"
-SELECT CAST(STRFTIME('%Y', e.JoinDate) AS INT) AS [Year],
-       COUNT(*) AS TotalEmployees,
-       MAX(e.Salary) AS MaxSalary
-FROM Employees e
-WHERE e.JoinDate >= @from
-GROUP BY CAST(STRFTIME('%Y', e.JoinDate) AS INT)
-HAVING COUNT(*) >= 2
-ORDER BY [Year] ASC;";
-            // Note: STRFTIME works on SQLite. For SQL Server, use YEAR(e.JoinDate).
-            return ExecQuery(sql,
-                cmd => { var p = cmd.CreateParameter(); p.ParameterName = "@from"; p.Value = new DateTime(2022, 1, 1); cmd.Parameters.Add(p); },
-                r => new JoinYearAggRow
-                {
-                    Year = r.GetInt32(0),
-                    TotalEmployees = r.GetInt32(1),
-                    MaxSalary = Convert.ToDecimal(r.GetValue(2))
+            const string sql = @"SELECT EmployeeId,FullName,IsActive FROM Employees WHERE IsActive = 1 ORDER BY FullName ASC";
+
+            var results = ExecQuery(sql,
+                paramBinder: null,
+                map: r => new EmployeeRow
+                { 
+                    EmployeeId = r.GetInt32(0),
+                    FullName = r.GetString(1),
+                    IsActive = Convert.ToBoolean(r.GetValue(2))
                 });
+
+            // Print to console with column headers
+            Console.WriteLine("\nSQL Scenario1 Results:");
+            Console.WriteLine("EmployeeId | FullName | IsActive");
+            Console.WriteLine("---------------------------------");
+            foreach (var e in results)
+            {
+                Console.WriteLine($"{e.EmployeeId} | {e.FullName} | {e.IsActive}");
+            }
+
+            return results;
         }
+
+        /// <summary>
+        /// SQL Scenario2:
+        /// Table: Products
+        /// Columns: ProductId (int), Name (string), Price (decimal), CategoryId (int)
+        ///
+        /// Task:
+        /// List all products with a Price greater than 1000.
+        /// Return ProductId, Name, Price.
+        /// Sort results by Price descending.
+        /// </summary>
+        public List<ProductRow> SQLScenario2()
+        {
+            const string sql = @"-- TODO: YOUR SQL HERE";
+
+            var results = ExecQuery(sql,
+                paramBinder: null,
+                map: r => new ProductRow
+                {
+                    ProductId = r.GetInt32(0),
+                    Name = r.GetString(1),
+                    Price = r.GetDecimal(2)
+                });
+
+            // Print to console with column headers
+            Console.WriteLine("\nSQL Scenario2 Results:");
+            Console.WriteLine("ProductId | Name | Price");
+            Console.WriteLine("-------------------------");
+            foreach (var p in results)
+            {
+                Console.WriteLine($"{p.ProductId} | {p.Name} | {p.Price:0.00}");
+            }
+
+            return results;
+        }
+
+        
+
+
+
     }
 
     // Simple POCO rows to map SQL results
+
+    public class EmployeeRow
+    {
+        public int EmployeeId { get; set; }
+        public string FullName { get; set; } = string.Empty;
+        public bool IsActive { get; set; }
+    }
+
     public class ProductRow
     {
         public int ProductId { get; set; }
