@@ -180,7 +180,10 @@ namespace LinqEfPractice.ConsoleApp
         /// </summary>
         public List<ProductRow> SQLScenario2()
         {
-            const string sql = @"-- TODO: YOUR SQL HERE";
+            const string sql = @"SELECT ProductId, Name, Price
+                                    FROM Products
+                                    WHERE Price > 1000
+                                    ORDER BY Price DESC";
 
             var results = ExecQuery(sql,
                 paramBinder: null,
@@ -203,13 +206,162 @@ namespace LinqEfPractice.ConsoleApp
             return results;
         }
 
-        
+
+        /// <summary>
+        /// SQL Scenario3:
+        /// Table: Customers
+        /// Columns: CustomerId (int), Name (string), Country (string)
+        ///
+        /// Task:
+        /// List all customers who are from "India".
+        /// Return CustomerId, Name, Country.
+        /// Sort results by Name ascending.
+        /// </summary>
+        public List<CustomerRow> SQLScenario3()
+        {
+            const string sql = @"Select CustomerId,Name,Country from Customers where Country = 'India' ORDER BY Name ASC";
+
+            var results = ExecQuery(sql,
+                paramBinder: null,
+                map: r => new CustomerRow
+                {
+                    CustomerId = r.GetInt32(0),
+                    Name = r.GetString(1),
+                    Country = r.GetString(2)
+                });
+
+            // Print to console with column headers
+            Console.WriteLine("\nSQL Scenario3 Results:");
+            Console.WriteLine("CustomerId | Name | Country");
+            Console.WriteLine("---------------------------");
+            foreach (var c in results)
+            {
+                Console.WriteLine($"{c.CustomerId} | {c.Name} | {c.Country}");
+            }
+
+            return results;
+        }
+
+        /// <summary>
+        /// SQL Scenario4:
+        /// Table: Employees
+        /// Columns: EmployeeId (int), FullName (string), IsActive (bool), JoinDate (datetime), DepartmentId (int), Salary (decimal)
+        ///
+        /// Task:
+        /// List all employees who are NOT active (IsActive = 0).
+        /// Return EmployeeId, FullName, IsActive.
+        /// Sort results by FullName ascending.
+        /// </summary>
+        public List<EmployeeRow> SQLScenario4()
+        {
+            const string sql = @"SELECT EmployeeId,FullName, IsActive FROM Employees WHERE IsActive = 0 ORDER BY FullName";
+
+            var results = ExecQuery(sql,
+                paramBinder: null,
+                map: r => new EmployeeRow
+                {
+                    EmployeeId = r.GetInt32(0),
+                    FullName = r.GetString(1),
+                    IsActive = Convert.ToBoolean(r.GetValue(2))
+                });
+
+            // Print to console with column headers
+            Console.WriteLine("\nSQL Scenario4 Results:");
+            Console.WriteLine("EmployeeId | FullName | IsActive");
+            Console.WriteLine("---------------------------------");
+            foreach (var e in results)
+            {
+                Console.WriteLine($"{e.EmployeeId} | {e.FullName} | {e.IsActive}");
+            }
+
+            return results;
+        }
+
+        /// <summary>
+        /// SQL Scenario5:
+        /// Table: Products
+        /// Columns: ProductId (int), Name (string), Price (decimal), CategoryId (int)
+        ///
+        /// Task:
+        /// List all products whose Name starts with the letter 'M'.
+        /// Return ProductId, Name, Price.
+        /// Sort results by Name ascending.
+        /// </summary>
+        public List<ProductRow> SQLScenario5()
+        {
+            const string sql = @"Select ProductId, Name, Price From Products Where Name like 'M%' Order by Name ASC";
+
+            var results = ExecQuery(sql,
+                paramBinder: null,
+                map: r => new ProductRow
+                {
+                    ProductId = r.GetInt32(0),
+                    Name = r.GetString(1),
+                    Price = r.GetDecimal(2)
+                });
+
+            // Print to console with column headers
+            Console.WriteLine("\nSQL Scenario5 Results:");
+            Console.WriteLine("ProductId | Name | Price");
+            Console.WriteLine("-------------------------");
+            foreach (var p in results)
+            {
+                Console.WriteLine($"{p.ProductId} | {p.Name} | {p.Price:0.00}");
+            }
+
+            return results;
+        }
+
+
+        /// <summary>
+        /// SQL Scenario6:
+        /// Table: Orders
+        /// Columns: OrderId (int), CustomerId (int), OrderDate (datetime), Status (string)
+        ///
+        /// Task:
+        /// List all orders placed after January 1, 2025.
+        /// Return OrderId, CustomerId, OrderDate.
+        /// Sort results by OrderDate ascending.
+        /// </summary>
+        public List<OrderRow> SQLScenario6()
+        {
+            const string sql = @"-- TODO: YOUR SQL HERE";
+
+            var results = ExecQuery(sql,
+                paramBinder: null,
+                map: r => new OrderRow
+                {
+                    OrderId = r.GetInt32(0),
+                    CustomerId = r.GetInt32(1),
+                    OrderDate = r.GetDateTime(2)
+                });
+
+            // Print to console with column headers
+            Console.WriteLine("\nSQL Scenario6 Results:");
+            Console.WriteLine("OrderId | CustomerId | OrderDate");
+            Console.WriteLine("--------------------------------");
+            foreach (var o in results)
+            {
+                Console.WriteLine($"{o.OrderId} | {o.CustomerId} | {o.OrderDate:yyyy-MM-dd}");
+            }
+
+            return results;
+        }
+
 
 
 
     }
 
     // Simple POCO rows to map SQL results
+
+    public class CustomerRow
+    {
+        public int CustomerId { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string Country { get; set; } = string.Empty;
+    }
+
 
     public class EmployeeRow
     {
@@ -255,4 +407,12 @@ namespace LinqEfPractice.ConsoleApp
         public int TotalEmployees { get; set; }
         public decimal MaxSalary { get; set; }
     }
+
+    public class OrderRow
+    {
+        public int OrderId { get; set; }
+        public int CustomerId { get; set; }
+        public DateTime OrderDate { get; set; }
+    }
+
 }
