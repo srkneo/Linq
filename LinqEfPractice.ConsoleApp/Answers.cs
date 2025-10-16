@@ -2754,7 +2754,7 @@ namespace LinqEfPractice.ConsoleApp
                                OrderCount = g.Count(),
                                FirstOrderDate = g.Min(x => x.OrderDate),
                                LastOrderDate = g.Max(x => x.OrderDate),
-                               TotalRevenue = g.Sum(x => x.TotalBill)
+                               TotalRevenue = g.Sum(x => x.TotalBill),                               
                            })
                            .Where(x => x.OrderCount >= 2)
                            .OrderByDescending(x => x.LastOrderDate)
@@ -2764,6 +2764,287 @@ namespace LinqEfPractice.ConsoleApp
 
 
         }
+
+        /// <summary>
+        /// Scenario 50 (Orders + Customers — 2025 average orders per customer by country):
+        /// Using Orders and Customers:
+        /// 1) WHERE: Only consider orders placed in 2025.
+        /// 2) GROUP BY: Country (from Customers).
+        /// 3) For each group return:
+        ///    - Country
+        ///    - CustomerCount        (distinct customers in that country)
+        ///    - OrderCount           (number of orders)
+        ///    - AvgOrdersPerCustomer (OrderCount / CustomerCount)
+        /// 4) HAVING: Keep only countries where CustomerCount >= 2.
+        /// 5) ORDER BY: AvgOrdersPerCustomer DESC, then Country ASC.
+        /// Provide BOTH:
+        ///   Option 1 = explicit Join (Orders ↔ Customers on CustomerId)
+        ///   Option 2 = navigation property (o.Customer.Country)
+        /// </summary>
+        public void Scenario50()
+        {
+            // TODO: Write BOTH Option 1 (Join) and Option 2 (Navigation) queries here
+            // Hint: use a 2025 date range (>= 2025-01-01 && < 2026-01-01)
+            //       and compute CustomerCount with: g.Select(x => x.CustomerId).Distinct().Count()
+            //       then AvgOrdersPerCustomer = (double)OrderCount / CustomerCount
+
+            var start = new DateTime(2025, 1, 1);
+            var end = new DateTime(2026, 1, 1);
+
+            // Option 1 (Join)
+            var result = _db.Orders.AsNoTracking()
+                            .Where(o => o.OrderDate >= start && o.OrderDate < end)
+                            .Join(_db.Customers,
+
+                                o => o.CustomerId,
+                                c => c.CustomerId,
+                                (o, c) => new { o, c })
+                            .GroupBy(g => g.c.Country)
+                            .Select(g => new
+                            {
+
+                                g.Key,
+                                CoustomerCount = g.Select(x => x.c.CustomerId).Distinct().Count(),
+                                OrderCount = g.Select(x => x.o.OrderId).Count(),
+                                AvgOrdersPerCustomer = g.Select(x => x.o.OrderId).Count() / g.Select(x => x.c.CustomerId).Distinct().Count()
+                            })
+                            .Where(x => x.CoustomerCount >= 2)
+                            .OrderByDescending(x => x.AvgOrdersPerCustomer)
+                            .ThenBy(x => x.Key)
+                            .ToList();
+
+            //Option 2(Navigation)
+            var result2 = _db.Orders.AsNoTracking()
+                           .Where(o => o.OrderDate >= start && o.OrderDate < end)                           
+                           .GroupBy(g => g.Customer!.Country)
+                           .Select(g => new
+                           {
+                               g.Key,
+                               CoustomerCount = g.Select(x => x.Customer!.CustomerId).Distinct().Count(),
+                               OrderCount = g.Select(x => x.OrderId).Count(),
+                               AvgOrdersPerCustomer = g.Select(x => x.OrderId).Count() / g.Select(x => x.Customer!.CustomerId).Distinct().Count()
+                           })
+                           .Where(x => x.CoustomerCount >= 2)
+                           .OrderByDescending(x => x.AvgOrdersPerCustomer)
+                           .ThenBy(x => x.Key)
+                           .ToList();
+
+
+
+        }
+
+
+        /// <summary>
+        /// Scenario 51 (OrderItems + Products — 2025 product sales stats):
+        /// Using OrderItems and Products:
+        /// 1) WHERE: Consider only OrderItems whose parent Order was placed in 2025.
+        /// 2) JOIN: OrderItems ↔ Products on ProductId (or use navigation oi.Product).
+        /// 3) GROUP BY: ProductId + ProductName.
+        /// 4) SELECT per group:
+        ///    - ProductId
+        ///    - ProductName
+        ///    - DistinctCustomerCount  (number of distinct customers who bought this product in 2025)
+        ///    - TotalQtySold           (sum of Quantity)
+        ///    - TotalRevenue           (sum of UnitPrice * Quantity)
+        /// 5) HAVING: Keep only products where DistinctCustomerCount >= 2.
+        /// 6) ORDER BY: TotalQtySold DESC, then ProductName ASC.
+        /// Provide BOTH:
+        ///   Option 1 = explicit Join (OrderItems ↔ Products)
+        ///   Option 2 = navigation property (oi.Product.Name / oi.Order.OrderDate)
+        /// Notes/Hints:
+        ///   - Use a 2025 half-open date range: OrderDate >= 2025-01-01 && OrderDate < 2026-01-01.
+        ///   - DistinctCustomerCount: g.Select(x => x.oi.Order.CustomerId) OR g.Select(x => x.o.CustomerId).Distinct().Count()
+        ///   - Use AsNoTracking() for read-only queries.
+        /// </summary>
+        public void Scenario51()
+        {
+            // TODO: write Option 1 (explicit Join) and Option 2 (navigation) here
+
+            var start = new DateTime(2025, 1, 1);
+            var end = new DateTime(2026, 1, 1);
+
+            //Option 1 (explicit Join)
+
+            var result = _db.OrderItems.AsNoTracking()
+                            .Where(ot => ot.Order!.OrderDate >= start && ot.Order!.OrderDate < end)
+                            .Join(_db.Products,
+                                   ot => ot.ProductId,
+                                   p => p.ProductId,
+                                   (ot, p) => new { ot, p })
+                            .GroupBy(g => new { g.p.ProductId, g.p.Name })
+                            .Select(g => new
+                            {
+
+                                g.Key.ProductId,
+                                ProductName = g.Key.Name,
+                                DistictCustomerCount = g.Select(x => x.ot.Order!.CustomerId).Distinct().Count(),
+                                TotalQtySold = g.Sum(x => x.ot.Quantity),
+                                TotalRevenue = g.Sum(x => x.ot.UnitPrice * x.ot.Quantity)
+                            })
+                            .Where(x => x.DistictCustomerCount >= 2)
+                            .OrderByDescending(x => x.TotalQtySold)
+                            .ThenBy(x => x.ProductName)
+                            .ToList();
+
+            //Option 2 (navigation)
+
+            var result2 = _db.OrderItems.AsNoTracking()
+                           .Where(ot => ot.Order!.OrderDate >= start && ot.Order!.OrderDate < end)                          
+                           .GroupBy(g => new { g.Product!.ProductId, g.Product!.Name })
+                           .Select(g => new
+                           {
+
+                               g.Key.ProductId,
+                               ProductName = g.Key.Name,
+                               DistictCustomerCount = g.Select(x => x.Order!.CustomerId).Distinct().Count(),
+                               TotalQtySold = g.Sum(x => x.Quantity),
+                               TotalRevenue = g.Sum(x => x.UnitPrice * x.Quantity)
+                           })
+                           .Where(x => x.DistictCustomerCount >= 2)
+                           .OrderByDescending(x => x.TotalQtySold)
+                           .ThenBy(x => x.ProductName)
+                           .ToList();
+
+
+        }
+
+        /// <summary>
+        /// Scenario 52 (Orders + Customers — high-value order rate per customer in 2025):
+        /// Using Orders and Customers:
+        /// 1) WHERE: Only consider orders placed in 2025 (half-open range).
+        /// 2) GROUP BY: CustomerId + CustomerName.
+        /// 3) For each group return:
+        ///    - CustomerId
+        ///    - CustomerName
+        ///    - OrderCount                (number of orders)
+        ///    - HighValueOrderCount      (count of orders with TotalBill >= 2000)
+        ///    - HighValueOrderPct        (HighValueOrderCount / OrderCount as double)
+        /// 4) HAVING: Keep only customers where OrderCount >= 2.
+        /// 5) ORDER BY: HighValueOrderPct DESC, then CustomerName ASC.
+        /// Provide BOTH:
+        ///   Option 1 = explicit Join (Orders ↔ Customers on CustomerId)
+        ///   Option 2 = navigation property (o.Customer.Name)
+        /// Notes:
+        ///   - Use AsNoTracking() for read-only.
+        ///   - Prefer a 2025 date range: OrderDate >= new DateTime(2025,1,1) && OrderDate < new DateTime(2026,1,1)
+        ///   - Compute HighValueOrderPct as a double to avoid integer division:
+        ///       HighValueOrderPct = 1.0 * HighValueOrderCount / OrderCount
+        /// </summary>
+        public void Scenario52()
+        {
+            // TODO: Write BOTH Option 1 (Join) and Option 2 (Navigation) queries here
+
+            
+
+            var start = new DateTime(2025, 1, 1);
+            var end = new DateTime(2026, 1, 1);
+
+            //Option 1 (Join)
+
+            var result = _db.Orders.AsNoTracking()
+                            .Where(o => o.OrderDate >= start && o.OrderDate < end)
+                            .Join(_db.Customers,
+                                o => o.CustomerId,
+                                c => c.CustomerId,
+                                (o, c) => new { o, c })
+                            .GroupBy(g => new { g.c.CustomerId, g.c.Name })
+                            .Select(g => new
+                            {
+
+                                g.Key.CustomerId,
+                                CustomerName = g.Key.Name,
+                                OrderCount = g.Count(),
+                                HighValueOrderCount = g.Count(x => x.o.TotalBill >= 2000),
+                                HighValueOrderPct = g.Count(x => x.o.TotalBill >= 2000) / (double)g.Count()
+                            })
+                            .Where(x => x.OrderCount >= 2)
+                            .OrderByDescending(x => x.HighValueOrderPct)
+                            .ThenBy(x => x.CustomerName)
+                            .ToList();
+
+            // Option 2 (Navigation)
+
+            var result2 = _db.Orders.AsNoTracking()
+                            .Where(o => o.OrderDate >= start && o.OrderDate < end)                            
+                            .GroupBy(g => new { g.Customer!.CustomerId, g.Customer!.Name })
+                            .Select(g => new
+                            {
+
+                                g.Key.CustomerId,
+                                CustomerName = g.Key.Name,
+                                OrderCount = g.Count(),
+                                HighValueOrderCount = g.Count(x => x.TotalBill >= 2000),
+                                HighValueOrderPct = g.Count(x => x.TotalBill >= 2000) / (double)g.Count()
+                            })
+                            .Where(x => x.OrderCount >= 2)
+                            .OrderByDescending(x => x.HighValueOrderPct)
+                            .ThenBy(x => x.CustomerName)
+                            .ToList();
+
+        }
+
+
+        /// <summary>
+        /// Scenario 53 – Products + OrderItems (Top Revenue Products in 2025)
+        /// Compute order count, total quantity, total revenue, and average revenue per order.
+        /// Provide both:
+        ///   Option 1 = explicit Join (OrderItems ↔ Products)
+        ///   Option 2 = navigation property (oi.Product.Name)
+        /// </summary>
+        public void Scenario53()
+        {
+            var start = new DateTime(2025, 1, 1);
+            var end = new DateTime(2026, 1, 1);
+
+            // TODO: Write Option 1 (Join) and Option 2 (Navigation)
+
+            // Option 1 (Join)
+
+            var result = _db.OrderItems.AsNoTracking()
+                             .Where(p => p.Order!.OrderDate >= start && p.Order!.OrderDate < end)
+                             .Join(_db.Products,
+                             
+                                oi => oi.ProductId,
+                                p => p.ProductId,
+                                (oi,p) => new { oi,p })
+                             .GroupBy(g => new { g.p.ProductId,g.p.Name })
+                             .Select(g => new { 
+                             
+                                 g.Key.ProductId,
+                                 ProductName = g.Key.Name,
+                                 OrderCount = g.Count(),
+                                 TotalQtySold = g.Sum(x => x.oi.Quantity),
+                                 TotalRevenue = g.Sum(x => x.oi.Quantity * x.oi.UnitPrice),
+                                 AverageRevenuePerOrder = g.Sum(x => x.oi.Quantity * x.oi.UnitPrice)/ g.Count()
+                             })
+                             .Where(x => x.OrderCount >= 2)
+                             .OrderByDescending(x => x.TotalRevenue)
+                             .ThenBy(x => x.ProductName)
+                             .ToList();
+
+            //Option 2 (Navigation)
+
+
+            var result2 = _db.OrderItems.AsNoTracking()
+                             .Where(p => p.Order!.OrderDate >= start && p.Order!.OrderDate < end)                             
+                             .GroupBy(g => new { g.Product!.ProductId, g.Product!.Name })
+                             .Select(g => new {
+
+                                 g.Key.ProductId,
+                                 ProductName = g.Key.Name,
+                                 OrderCount = g.Count(),
+                                 TotalQtySold = g.Sum(x => x.Quantity),
+                                 TotalRevenue = g.Sum(x => x.Quantity * x.UnitPrice),
+                                 AverageRevenuePerOrder = g.Sum(x => x.Quantity * x.UnitPrice) / g.Count()
+                             })
+                             .Where(x => x.OrderCount >= 2)
+                             .OrderByDescending(x => x.TotalRevenue)
+                             .ThenBy(x => x.ProductName)
+                             .ToList();
+
+        }
+
+
 
     }
 }

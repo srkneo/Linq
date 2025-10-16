@@ -325,7 +325,7 @@ namespace LinqEfPractice.ConsoleApp
         /// </summary>
         public List<OrderRow> SQLScenario6()
         {
-            const string sql = @"-- TODO: YOUR SQL HERE";
+            const string sql = @"Select OrderId, CustomerId, OrderDate from Orders where OrderDate > '2025-01-01' ORDER BY OrderDate ASC";
 
             var results = ExecQuery(sql,
                 paramBinder: null,
@@ -349,11 +349,200 @@ namespace LinqEfPractice.ConsoleApp
         }
 
 
+        /// <summary>
+        /// SQL Scenario7:
+        /// Tables: Products (ProductId, Name, Price, CategoryId)
+        ///          Categories (CategoryId, Name)
+        ///
+        /// Task:
+        /// List all products along with their category name.
+        /// Return ProductId, ProductName, CategoryName, and Price.
+        /// Sort results by CategoryName ascending, then ProductName ascending.
+        /// </summary>
+        public List<ProductCategoryRow> SQLScenario7()
+        {
+            const string sql = @"Select p.ProductId, p.Name as ProductName,c.Name as CatagoryName,p.Price
+
+                                From Product p Inner Join Catagories c ON p.ProductId = c.ProductId
+                                Order By c.Name ASC,P.Name ASC";
+
+            var results = ExecQuery(sql,
+                paramBinder: null,
+                map: r => new ProductCategoryRow
+                {
+                    ProductId = r.GetInt32(0),
+                    ProductName = r.GetString(1),
+                    CategoryName = r.GetString(2),
+                    Price = r.GetDecimal(3)
+                });
+
+            // Print to console with column headers
+            Console.WriteLine("\nSQL Scenario7 Results:");
+            Console.WriteLine("ProductId | ProductName | CategoryName | Price");
+            Console.WriteLine("------------------------------------------------");
+            foreach (var row in results)
+            {
+                Console.WriteLine($"{row.ProductId} | {row.ProductName} | {row.CategoryName} | {row.Price:0.00}");
+            }
+
+            return results;
+        }
+
+        /// <summary>
+        /// SQL Scenario8:
+        /// Tables: Employees (EmployeeId, FullName, IsActive, JoinDate, DepartmentId, Salary)
+        ///          Departments (DepartmentId, Name)
+        ///
+        /// Task:
+        /// List all employees along with their department name.
+        /// Return EmployeeId, FullName, DepartmentName, and Salary.
+        /// Sort results by DepartmentName ascending, then FullName ascending.
+        /// </summary>
+        public List<EmployeeDepartmentRow> SQLScenario8()
+        {
+            const string sql = @"SELECT e.EmployeeId, e.FullName, d.Name DepartmentName, e.Salary FROM Employees e INNER JOIN Departments d ON e.DepartmentId = d.DepartmentId ORDER BY d.Name ASC, e.FullName ASC";
+
+            var results = ExecQuery(sql,
+                paramBinder: null,
+                map: r => new EmployeeDepartmentRow
+                {
+                    EmployeeId = r.GetInt32(0),
+                    FullName = r.GetString(1),
+                    DepartmentName = r.GetString(2),
+                    Salary = r.GetDecimal(3)
+                });
+
+            // Print to console with column headers
+            Console.WriteLine("\nSQL Scenario8 Results:");
+            Console.WriteLine("EmployeeId | FullName | DepartmentName | Salary");
+            Console.WriteLine("------------------------------------------------");
+            foreach (var row in results)
+            {
+                Console.WriteLine($"{row.EmployeeId} | {row.FullName} | {row.DepartmentName} | {row.Salary:0.00}");
+            }
+
+            return results;
+        }
+
+
+        /// <summary>
+        /// SQL Scenario9:
+        /// Tables: Orders (OrderId, CustomerId, OrderDate, Status)
+        ///          Customers (CustomerId, Name, Country)
+        ///
+        /// Task:
+        /// List all orders along with the customer name and country.
+        /// Return OrderId, CustomerName, Country, and OrderDate.
+        /// Sort results by CustomerName ascending, then OrderDate ascending.
+        /// </summary>
+        public List<OrderCustomerRow> SQLScenario9()
+        {
+            const string sql = @"SELECT o.OrderId, c.Name AS CustomerName, c.Country, o.OrderDate From Orders o INNER JOIN Customers c ON o.CustomerId = c.CustomerId ORDER BY c.Name ASC, o.OrderDate ASC";
+
+            var results = ExecQuery(sql,
+                paramBinder: null,
+                map: r => new OrderCustomerRow
+                {
+                    OrderId = r.GetInt32(0),
+                    CustomerName = r.GetString(1),
+                    Country = r.GetString(2),
+                    OrderDate = r.GetDateTime(3)
+                });
+
+            // Print to console with column headers
+            Console.WriteLine("\nSQL Scenario9 Results:");
+            Console.WriteLine("OrderId | CustomerName | Country | OrderDate");
+            Console.WriteLine("---------------------------------------------");
+            foreach (var row in results)
+            {
+                Console.WriteLine($"{row.OrderId} | {row.CustomerName} | {row.Country} | {row.OrderDate:yyyy-MM-dd}");
+            }
+
+            return results;
+        }
+
+
+        /// <summary>
+        /// SQL Scenario10:
+        /// Tables: OrderItems (OrderItemId, OrderId, ProductId, Quantity, UnitPrice)
+        ///          Products (ProductId, Name, Price, CategoryId)
+        ///
+        /// Task:
+        /// List all order items along with their product name and unit price
+        /// for items where Quantity > 2.
+        /// Return OrderItemId, ProductName, Quantity, and UnitPrice.
+        /// Sort results by ProductName ascending.
+        /// </summary>
+        public List<OrderItemProductRow> SQLScenario10()
+        {
+            const string sql = @"SELECT oi.OrderItemid,p.Name as ProductName, oi.Quantity,oi.UnitPrice FROM OrderItems oi INNER JOIN  Products ON p  oi.ProductId = p.ProductId where oi.Quantity > 2 
+                                 ORDER BY p.Name ASC";
+
+            var results = ExecQuery(sql,
+                paramBinder: null,
+                map: r => new OrderItemProductRow
+                {
+                    OrderItemId = r.GetInt32(0),
+                    ProductName = r.GetString(1),
+                    Quantity = r.GetInt32(2),
+                    UnitPrice = r.GetDecimal(3)
+                });
+
+            // Print to console with column headers
+            Console.WriteLine("\nSQL Scenario10 Results:");
+            Console.WriteLine("OrderItemId | ProductName | Quantity | UnitPrice");
+            Console.WriteLine("------------------------------------------------");
+            foreach (var row in results)
+            {
+                Console.WriteLine($"{row.OrderItemId} | {row.ProductName} | {row.Quantity} | {row.UnitPrice:0.00}");
+            }
+
+            return results;
+        }
+
+
+
 
 
     }
 
     // Simple POCO rows to map SQL results
+
+    public class OrderItemProductRow
+    {
+        public int OrderItemId { get; set; }
+        public string ProductName { get; set; } = string.Empty;
+        public int Quantity { get; set; }
+        public decimal UnitPrice { get; set; }
+    }
+
+
+    public class OrderCustomerRow
+    {
+        public int OrderId { get; set; }
+        public string CustomerName { get; set; } = string.Empty;
+        public string Country { get; set; } = string.Empty;
+        public DateTime OrderDate { get; set; }
+    }
+
+
+    public class EmployeeDepartmentRow
+    {
+        public int EmployeeId { get; set; }
+        public string FullName { get; set; } = string.Empty;
+        public string DepartmentName { get; set; } = string.Empty;
+        public decimal Salary { get; set; }
+    }
+
+
+    public class ProductCategoryRow
+    {
+        public int ProductId { get; set; }
+        public string ProductName { get; set; } = string.Empty;
+        public string CategoryName { get; set; } = string.Empty;
+        public decimal Price { get; set; }
+    }
+
 
     public class CustomerRow
     {
