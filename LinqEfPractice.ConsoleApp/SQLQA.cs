@@ -501,6 +501,46 @@ namespace LinqEfPractice.ConsoleApp
         }
 
 
+        /// <summary>
+        /// SQL Scenario11:
+        /// Tables: Orders (OrderId, CustomerId, OrderDate, Status)
+        ///          Customers (CustomerId, Name, Country)
+        ///
+        /// Task:
+        /// List all orders placed after January 1, 2025,
+        /// along with the customer name and country.
+        /// Return OrderId, CustomerName, Country, and OrderDate.
+        /// Sort results by OrderDate ascending.
+        /// </summary>
+        public List<OrderCustomerRow> SQLScenario11()
+        {
+            const string sql = @"SELECT o.OrderId, c.Name as CustomerName, c.Country, o.OrderDate
+                                 FROM Orders o INNER JOIN Customers c ON o.CustomerId = c.CustomerId
+                                 WHERE o.OrderDate > '2025-01-01'
+                                 ORDER BY OrderDate ASC";
+
+            var results = ExecQuery(sql,
+                paramBinder: null,
+                map: r => new OrderCustomerRow
+                {
+                    OrderId = r.GetInt32(0),
+                    CustomerName = r.GetString(1),
+                    Country = r.GetString(2),
+                    OrderDate = r.GetDateTime(3)
+                });
+
+            // Print to console with column headers
+            Console.WriteLine("\nSQL Scenario11 Results:");
+            Console.WriteLine("OrderId | CustomerName | Country | OrderDate");
+            Console.WriteLine("---------------------------------------------");
+            foreach (var row in results)
+            {
+                Console.WriteLine($"{row.OrderId} | {row.CustomerName} | {row.Country} | {row.OrderDate:yyyy-MM-dd}");
+            }
+
+            return results;
+        }
+
 
 
 
